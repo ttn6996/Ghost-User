@@ -180,14 +180,18 @@ class TestFixtureHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
 
+class ReusableHTTPServer(HTTPServer):
+    allow_reuse_address = True
+
+
 def run_fixture_server(port=PORT):
-    server = HTTPServer(("127.0.0.1", port), TestFixtureHandler)
+    server = ReusableHTTPServer(("127.0.0.1", port), TestFixtureHandler)
     server.serve_forever()
 
 
-def start_fixture_server_in_background(port=PORT):
-    server = HTTPServer(("127.0.0.1", port), TestFixtureHandler)
+def start_fixture_server_in_background(port=0):
+    server = ReusableHTTPServer(("127.0.0.1", port), TestFixtureHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    time.sleep(0.3)
+    time.sleep(0.1)
     return server

@@ -10,9 +10,11 @@ from tests.fixtures.server import start_fixture_server_in_background, PORT
 
 @pytest.fixture(scope="module")
 def fixture_server():
-    server = start_fixture_server_in_background(port=PORT)
-    yield f"http://127.0.0.1:{PORT}"
+    server = start_fixture_server_in_background(port=0)
+    actual_port = server.server_address[1]
+    yield f"http://127.0.0.1:{actual_port}"
     server.shutdown()
+    server.server_close()
 
 
 def test_queue_consumer_claims_and_executes(db_session: Session, fixture_server: str):
