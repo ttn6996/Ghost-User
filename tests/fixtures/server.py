@@ -92,6 +92,42 @@ class TestFixtureHandler(BaseHTTPRequestHandler):
 </html>"""
             self.wfile.write(html.encode("utf-8"))
 
+        elif path == "/external-link":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            html = """<!DOCTYPE html>
+<html>
+<head><title>External Link</title></head>
+<body>
+  <h1>External Link Test</h1>
+  <a id="ext-link" href="https://example.com/external-target">Go to External</a>
+</body>
+</html>"""
+            self.wfile.write(html.encode("utf-8"))
+
+        elif path == "/redirect-to-metadata":
+            self.send_response(302)
+            self.send_header("Location", "http://169.254.169.254/latest/meta-data/")
+            self.end_headers()
+
+        elif path == "/metadata-subresource":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            html = """<!DOCTYPE html>
+<html>
+<head><title>Metadata Subresource</title></head>
+<body>
+  <h1>Metadata Subresource Test</h1>
+  <img id="metadata-img" src="http://169.254.169.254/latest/meta-data/img.png" />
+  <script>
+    fetch('http://169.254.169.254/latest/meta-data/').catch(() => {});
+  </script>
+</body>
+</html>"""
+            self.wfile.write(html.encode("utf-8"))
+
         elif path == "/broken":
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")

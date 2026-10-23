@@ -183,14 +183,48 @@ Supported actions:
 
 ## 5. Security & Isolation Architecture
 
-1. **SSRF Guard**: All target URLs must use `http` or `https`. Unless `ALLOW_LOCAL_TARGETS=true` is set (for local dev/testing fixtures), IP resolution blocks private RFC1918 ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), loopback (127.0.0.1/8), link-local (169.254.0.0/16), and cloud metadata endpoints (169.254.169.254).
-2. **Origin Restriction**: Actions may not navigate outside the base URL's registered origin domain without explicit configuration.
+1. **Browser Network Security & Route Interception**:
+   - Playwright context route interception (`context.route("**/*")`) dynamically intercepts every outgoing request (top-level navigations, clicks, redirects, fetch/XHR, and subresource elements like `<img src="...">`).
+   - Re-evaluates destination origins against the authorized project origin.
+   - Enforces IP CIDR blocklists (both IPv4 and IPv6: RFC 1918, CGNAT `100.64.0.0/10`, benchmark `198.18.0.0/15`, `169.254.0.0/16`, loopback `127.0.0.0/8`, IPv6 ULA `fc00::/7`, IPv6 link-local `fe80::/10`, IPv6 loopback `::1/128`, and cloud metadata `169.254.169.254`).
+   - Strict production mode guard: in `ENVIRONMENT=production`, `ALLOW_LOCAL_TARGETS` is strictly forbidden and rejected at startup/validation.
+   - Honest SSRF boundary: Playwright route interception blocks navigation and subresource requests to disallowed origins and private/metadata IPs. However, total SSRF defense against sophisticated internal DNS rebinding on live targets requires network-level egress proxies in production cloud environments.
+2. **Origin Confinement**: Clicks, script navigations, and redirects cannot jump outside the base URL's registered origin domain.
 3. **No Arbitrary Code**: Test definitions are declarative JSON schemas. No arbitrary Python `eval()`, shell commands, or injected scripts are ever executed.
-4. **Artifact Path Traversal Protection**: All artifacts (screenshots, traces) are referenced by relative subpaths and verified to resolve strictly within `ARTIFACT_STORAGE_DIR`.
+4. **Artifact Authorization & Path Traversal Protection**:
+   - In MVP, the artifact endpoints are designed for trusted local environments with strict path traversal verification (`path.resolve()`, `is_relative_to()`).
+   - For production public exposure, an authentication reverse proxy or token authorization dependency (`verify_artifact_authorization`) must be enabled.
 
 ---
 
-## 6. Failure Diagnostics & Observability
+## 6. Worker Claim Mechanics & Concurrency Model
+
+1. **Atomic Conditional Status Claiming**:
+   - Queue consumers claim queued test runs using an atomic conditional update:
+     ```sql
+     UPDATE test_runs
+     SET status = 'running', started_at = :now
+     WHERE id = :candidate_id AND status = 'queued';
+     ```
+   - The claim is committed to the database *before* browser initialization. If two workers attempt to claim the same queued job, only one transaction updates the row; the losing worker receives `rowcount == 0` and safely backs off.
+2. **Crash & Exception Resilience**:
+   - If an unhandled exception or browser startup crash occurs, the worker immediately updates the run status to `error`, preventing jobs from hanging indefinitely in `running`.
+   - On worker reboot, `recover_interrupted_runs()` inspects any orphaned `running` jobs from prior crashes and marks them as errors.
+3. **Database Concurrency Considerations**:
+   - **SQLite MVP**: Operates with single active execution (`WORKER_CONCURRENCY=1`) per worker process. SQLite WAL mode supports concurrent readers but serializes writes with file-level locks.
+   - **PostgreSQL Production**: Multi-worker horizontal scaling requires PostgreSQL row-level locks:
+     ```sql
+     SELECT id FROM test_runs
+     WHERE status = 'queued'
+     ORDER BY created_at ASC
+     LIMIT 1
+     FOR UPDATE SKIP LOCKED;
+     ```
+     This allows dozens of concurrent worker nodes to claim distinct jobs simultaneously without lock contention or duplicate execution.
+
+---
+
+## 7. Failure Diagnostics & Observability
 
 When a test run executes:
 - Each step is individually timed and recorded in `test_step_results`.

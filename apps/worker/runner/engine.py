@@ -17,10 +17,19 @@ from apps.worker.runner.actions import (
     StepExecutionError,
 )
 from apps.worker.runner.artifacts import ArtifactManager
+from apps.worker.runner.security import check_browser_request_security, SecurityValidationError
 
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 class BrowserExecutionEngine:
@@ -48,20 +57,22 @@ class BrowserExecutionEngine:
             self.db.commit()
             return RunStatus.ERROR
 
-        # Mark run as running
-        start_time = utc_now()
-        run.status = RunStatus.RUNNING.value
-        run.started_at = start_time
-        self.db.commit()
-        self.db.refresh(run)
+        # Verify or initialize running timestamp
+        start_time = ensure_utc(run.started_at) or utc_now()
+        if run.status != RunStatus.RUNNING.value:
+            run.status = RunStatus.RUNNING.value
+            run.started_at = start_time
+            self.db.commit()
+            self.db.refresh(run)
 
         # Parse and validate test definition
         try:
             definition = TestDefinition.model_validate(test_case.definition_json)
         except Exception as e:
+            finished_time = utc_now()
             run.status = RunStatus.ERROR.value
-            run.finished_at = utc_now()
-            run.duration_ms = int((run.finished_at - start_time).total_seconds() * 1000)
+            run.finished_at = finished_time
+            run.duration_ms = int((finished_time - start_time).total_seconds() * 1000)
             run.error_summary = f"Invalid test definition schema: {e}"
             self.db.commit()
             return RunStatus.ERROR
@@ -90,6 +101,43 @@ class BrowserExecutionEngine:
 
                 if settings.TRACE_ON_FAILURE:
                     context.tracing.start(screenshots=True, snapshots=True, sources=True)
+
+                # Real-time network and navigation security controls
+                blocked_events: List[Dict[str, str]] = []
+
+                def handle_route(route):
+                    req = route.request
+                    url = req.url
+                    is_nav = req.is_navigation_request()
+                    is_allowed, reason = check_browser_request_security(
+                        url=url,
+                        base_url=project.base_url,
+                        is_navigation=is_nav,
+                        allow_local=settings.ALLOW_LOCAL_TARGETS,
+                    )
+                    if not is_allowed:
+                        logger.warning(f"Security policy blocked request: {url} (is_nav={is_nav}, reason={reason})")
+                        blocked_events.append({
+                            "url": url,
+                            "reason": reason,
+                            "is_navigation": str(is_nav),
+                        })
+                        console_logs.append({
+                            "type": "error",
+                            "text": f"[SECURITY_BLOCKED] {url}: {reason}",
+                            "location": None,
+                            "timestamp": utc_now().isoformat(),
+                        })
+                        route.abort("blockedbyclient")
+                    else:
+                        route.continue_()
+
+                context.route("**/*", handle_route)
+
+                # Also monitor popups or new tabs
+                def on_new_page(new_p):
+                    new_p.set_default_timeout(settings.ACTION_TIMEOUT_MS)
+                context.on("page", on_new_page)
 
                 page = context.new_page()
                 page.set_default_timeout(settings.ACTION_TIMEOUT_MS)
@@ -126,6 +174,8 @@ class BrowserExecutionEngine:
 
                     try:
                         logger.info(f"Run {run.id} executing step {idx}: {step_action.action}")
+                        blocked_before = len(blocked_events)
+
                         step_screenshot = execute_action(
                             action=step_action,
                             page=page,
@@ -134,6 +184,24 @@ class BrowserExecutionEngine:
                             artifact_manager=artifact_manager,
                             allow_local=settings.ALLOW_LOCAL_TARGETS,
                         )
+
+                        # Verify no navigations were blocked during this step
+                        new_blocked = blocked_events[blocked_before:]
+                        nav_blocked = [b for b in new_blocked if b["is_navigation"] == "True"]
+                        if nav_blocked:
+                            raise StepExecutionError(f"Security policy blocked navigation: {nav_blocked[0]['reason']}")
+
+                        # Also verify page.url is still on authorized origin
+                        if page.url and page.url != "about:blank":
+                            url_ok, reason = check_browser_request_security(
+                                page.url,
+                                base_url=project.base_url,
+                                is_navigation=True,
+                                allow_local=settings.ALLOW_LOCAL_TARGETS,
+                            )
+                            if not url_ok:
+                                raise StepExecutionError(f"Security violation: Page is at disallowed location '{page.url}': {reason}")
+
                     except StepAssertionFailure as e:
                         step_status = StepStatus.FAILED
                         step_error = str(e)

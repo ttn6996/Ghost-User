@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     ALLOW_LOCAL_TARGETS: bool = False
     MAX_REDIRECTS: int = 10
 
-    # Worker & Execution
-    WORKER_CONCURRENCY: int = 2
+    # Worker & Execution (1 active job per worker process for reliable sequential browser execution)
+    WORKER_CONCURRENCY: int = 1
     WORKER_POLL_INTERVAL_SECONDS: float = 2.0
     BROWSER_HEADLESS: bool = True
     BROWSER_TIMEOUT_MS: int = 30000

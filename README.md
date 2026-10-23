@@ -153,7 +153,10 @@ pytest -v
 
 ### Test Suite Structure
 - `tests/api/test_api_crud.py`: Project, TestCase, TestRun, and Schedule REST endpoints.
-- `tests/api/test_security_ssrf.py`: SSRF guards, private IP blocking, origin restrictions, traversal guards.
+- `tests/api/test_artifacts_security.py`: Path traversal guard verification and production-mode authorization boundary.
+- `tests/api/test_security_ssrf.py`: Target URL SSRF guards, private IP blocking, origin restrictions, traversal guards.
+- `tests/worker/test_browser_security.py`: Playwright route interception, external navigation/clicks, redirects, subresources, metadata IPs, DNS resolution checks, and production environment guards.
+- `tests/worker/test_atomic_claims.py`: Atomic conditional status claiming (`UPDATE ... WHERE status='queued'`), concurrent multi-worker claims, and error resilience.
 - `tests/worker/test_execution_engine.py`: Headless Chromium execution, action validations, assertion failures, error capture.
 - `tests/worker/test_worker_queue.py`: Asynchronous queue consumer and worker claim transitions.
 - `tests/worker/test_scheduler_and_recovery.py`: Crash recovery, scheduled job triggers, duplicate run prevention.
@@ -225,7 +228,11 @@ Interactive API documentation is generated automatically by FastAPI:
 
 ## 8. Security Posture & Safe Execution
 
-- **SSRF Defense**: The execution engine resolves target hostnames and blocks connections to private IPv4/IPv6 networks and cloud provider metadata addresses (`169.254.169.254`).
-- **Origin Confinement**: Tests cannot jump outside the registered `base_url` origin domain.
+- **Route Interception & Subresource SSRF Defense**: Playwright context-level route interception (`context.route("**/*")`) actively evaluates all outgoing requests, clicks, top-level navigations, redirects, and embedded subresources (`<img>`, `<script>`, `fetch`, `XMLHttpRequest`). Destinations resolving to private or special-use CIDRs (RFC 1918, CGNAT `100.64.0.0/10`, benchmark `198.18.0.0/15`, IPv4/IPv6 loopbacks, IPv6 ULA `fc00::/7`, IPv6 link-local `fe80::/10`, and cloud metadata `169.254.169.254`) are aborted at the browser layer.
+- **Origin Confinement**: Clicks, script navigations, and redirects cannot jump outside the project's authorized `base_url` origin domain.
+- **Production Mode Guard**: In `ENVIRONMENT=production`, local target resolution (`ALLOW_LOCAL_TARGETS=true`) is strictly prohibited and rejected.
+- **SSRF Boundary Honesty**: Playwright route interception prevents navigation and subresource requests to disallowed origins and private/metadata IPs. However, total SSRF defense against sophisticated internal DNS rebinding on live targets requires network-level egress proxies in production cloud environments.
+- **Atomic Job Claiming**: Workers atomically claim queued test runs via conditional database transitions (`UPDATE ... WHERE status = 'queued'`) committed before launching browser processes, preventing duplicate execution across competing workers.
+- **Concurrency Honesty**: The MVP operates with bounded concurrency explicitly set to `WORKER_CONCURRENCY=1` per worker process, ensuring clean database session handling and browser process lifecycle isolation.
+- **Artifact Authorization Boundary**: The local MVP artifact endpoint is designed for trusted local environments and enforces strict path traversal verification (`path.resolve()`, `is_relative_to()`). For production public exposure, an authentication reverse proxy or token authorization dependency (`verify_artifact_authorization`) must be enabled.
 - **No Injected Code Execution**: Tests are strictly declarative JSON schemas; no arbitrary Python `eval()`, shell scripts, or raw JavaScript execution.
-- **Directory Traversal Protection**: Artifact requests are verified against normalized subpaths.

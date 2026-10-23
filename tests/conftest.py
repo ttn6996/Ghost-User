@@ -18,12 +18,13 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["ALLOW_LOCAL_TARGETS"] = "true"
 
-from app.main import app
+import app.db.models  # Ensure all SQLAlchemy models are registered to Base.metadata
 from app.db.session import Base, get_db
+from app.main import app as fastapi_app
 
-# Create an in-memory SQLite engine with StaticPool so all threads/sessions share the same DB
+# Create an in-memory SQLite engine with shared cache and StaticPool so all sessions/threads share the test DB
 test_engine = create_engine(
-    "sqlite:///:memory:",
+    "sqlite:///file:ghost_test_mem?mode=memory&cache=shared&uri=true",
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
@@ -49,7 +50,7 @@ def client(db_session):
         finally:
             pass
 
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    fastapi_app.dependency_overrides[get_db] = override_get_db
+    with TestClient(fastapi_app) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
+    fastapi_app.dependency_overrides.clear()
