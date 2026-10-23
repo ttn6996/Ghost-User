@@ -1,5 +1,6 @@
 """Queue consumer for atomic claiming and dispatching queued test runs."""
 
+import threading
 from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -10,6 +11,9 @@ from app.core.logging import logger
 from app.db.models import TestRun
 from packages.shared.constants import RunStatus
 from apps.worker.runner.engine import BrowserExecutionEngine
+
+# In-process lock to prevent thread-level races on shared connections/cursors
+_claim_lock = threading.Lock()
 
 
 def utc_now() -> datetime:
@@ -31,58 +35,59 @@ class QueueConsumer:
         - Claim is committed to database before browser process launches.
         - Returns run_id if claimed, or None if no jobs available or job claimed by competing worker.
         """
-        # Bounded concurrency: Enforce limit (default 1 active job per worker process)
-        running_count = self.db.scalar(
-            select(func.count(TestRun.id)).filter(TestRun.status == RunStatus.RUNNING.value)
-        ) or 0
+        with _claim_lock:
+            # Bounded concurrency: Enforce limit (default 1 active job per worker process)
+            running_count = self.db.scalar(
+                select(func.count(TestRun.id)).filter(TestRun.status == RunStatus.RUNNING.value)
+            ) or 0
 
-        if running_count >= settings.WORKER_CONCURRENCY:
-            logger.debug(
-                f"Worker at capacity ({running_count}/{settings.WORKER_CONCURRENCY} active). Waiting for slots."
-            )
-            return None
-
-        # Find candidate oldest queued job
-        candidate_id = self.db.scalar(
-            select(TestRun.id)
-            .filter(TestRun.status == RunStatus.QUEUED.value)
-            .order_by(TestRun.created_at.asc())
-            .limit(1)
-        )
-
-        if not candidate_id:
-            return None
-
-        now = utc_now()
-        try:
-            # Atomic conditional update: only succeeds if status is still 'queued'
-            stmt = (
-                update(TestRun)
-                .where(
-                    and_(
-                        TestRun.id == candidate_id,
-                        TestRun.status == RunStatus.QUEUED.value,
-                    )
+            if running_count >= settings.WORKER_CONCURRENCY:
+                logger.debug(
+                    f"Worker at capacity ({running_count}/{settings.WORKER_CONCURRENCY} active). Waiting for slots."
                 )
-                .values(
-                    status=RunStatus.RUNNING.value,
-                    started_at=now,
-                )
-            )
-            result = self.db.execute(stmt)
-            self.db.commit()
-
-            if result.rowcount == 1:
-                logger.info(f"Worker atomically claimed test run {candidate_id}")
-                return candidate_id
-            else:
-                logger.debug(f"Test run {candidate_id} was claimed by another worker concurrently.")
                 return None
 
-        except Exception as e:
-            self.db.rollback()
-            logger.warning(f"Failed to claim test run {candidate_id}: {e}")
-            return None
+            # Find candidate oldest queued job
+            candidate_id = self.db.scalar(
+                select(TestRun.id)
+                .filter(TestRun.status == RunStatus.QUEUED.value)
+                .order_by(TestRun.created_at.asc())
+                .limit(1)
+            )
+
+            if not candidate_id:
+                return None
+
+            now = utc_now()
+            try:
+                # Atomic conditional update: only succeeds if status is still 'queued'
+                stmt = (
+                    update(TestRun)
+                    .where(
+                        and_(
+                            TestRun.id == candidate_id,
+                            TestRun.status == RunStatus.QUEUED.value,
+                        )
+                    )
+                    .values(
+                        status=RunStatus.RUNNING.value,
+                        started_at=now,
+                    )
+                )
+                result = self.db.execute(stmt)
+                self.db.commit()
+
+                if result.rowcount == 1:
+                    logger.info(f"Worker atomically claimed test run {candidate_id}")
+                    return candidate_id
+                else:
+                    logger.debug(f"Test run {candidate_id} was claimed by another worker concurrently.")
+                    return None
+
+            except Exception as e:
+                self.db.rollback()
+                logger.warning(f"Failed to claim test run {candidate_id}: {e}")
+                return None
 
     def process_next_job(self) -> bool:
         """Finds, atomically claims, and executes the next job. Returns True if a job was executed."""
