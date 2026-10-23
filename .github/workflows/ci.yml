@@ -1,6 +1,6 @@
 name: CI
 
-on:
+'on':
   push:
     branches: [ main ]
   pull_request:
@@ -29,9 +29,9 @@ jobs:
 
       - name: Run automated test suite
         env:
-          PYTHONPATH: ./:./apps/api
-          ENVIRONMENT: test
-          DATABASE_URL: sqlite:///:memory:
+          PYTHONPATH: "./:./apps/api"
+          ENVIRONMENT: "test"
+          DATABASE_URL: "sqlite:///:memory:"
           ALLOW_LOCAL_TARGETS: "true"
         run: |
           pytest -v
