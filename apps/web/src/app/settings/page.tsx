@@ -134,7 +134,7 @@ export default function SettingsPage() {
             <div>
               <span className="font-semibold text-zinc-200">Origin Domain Confinement</span>
               <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
-                Journeys are strictly confined to the project's base URL origin.
+                Journeys are strictly confined to the project&apos;s base URL origin.
               </p>
             </div>
             <span className="px-2 py-0.5 rounded text-[11px] bg-emerald-950/40 border border-emerald-800/60 text-emerald-400">

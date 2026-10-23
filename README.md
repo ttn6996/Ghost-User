@@ -68,15 +68,17 @@ Ghost-User is built as an isolated asynchronous execution platform where HTTP AP
 # Windows PowerShell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements.lock
 python -m playwright install chromium
 
 # Linux / macOS
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.lock
 python -m playwright install chromium
 ```
+
+> **Note**: `requirements.lock` contains fully pinned dependencies for deterministic and reproducible builds. `requirements.txt` defines abstract direct dependencies with version ranges.
 
 ### 2. Install Web Dashboard Dependencies
 ```bash
@@ -86,11 +88,9 @@ npm install
 ### 3. Run Database Migrations
 ```bash
 # Windows PowerShell
-$env:PYTHONPATH = "$PWD;$PWD\apps\api"
 .\.venv\Scripts\alembic.exe -c apps/api/alembic.ini upgrade head
 
 # Linux / macOS
-export PYTHONPATH="$PWD:$PWD/apps/api"
 alembic -c apps/api/alembic.ini upgrade head
 ```
 

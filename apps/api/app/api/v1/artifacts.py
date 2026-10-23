@@ -57,7 +57,12 @@ def get_artifact(test_run_id: str, file_path: str):
             logger.warning(f"Illegal path traversal attempt with test_run_id: {test_run_id}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid path identifier")
 
-        resolved_file = (target_dir / file_path).resolve()
+        candidate_file = target_dir / file_path
+        if candidate_file.is_symlink():
+            logger.warning(f"Illegal symlink access attempt: {file_path}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Symlinks not permitted")
+
+        resolved_file = candidate_file.resolve()
         if not resolved_file.is_relative_to(target_dir):
             logger.warning(f"Illegal path traversal attempt with file_path: {file_path}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid artifact path")

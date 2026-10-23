@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 # Add project root and apps/api to path
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(ROOT_DIR / "apps" / "api"))
 

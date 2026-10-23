@@ -8,7 +8,7 @@ $env:ALLOW_LOCAL_TARGETS = "true"
 
 $pytestExe = "$PSScriptRoot\..\.venv\Scripts\pytest.exe"
 if (-not (Test-Path $pytestExe)) {
-    Write-Error "Virtual environment pytest executable not found at $pytestExe. Please run python -m venv .venv and pip install -r requirements.txt first."
+    Write-Error "Virtual environment pytest executable not found at $pytestExe. Please run python -m venv .venv and pip install -r requirements.lock (or requirements.txt) first."
     exit 1
 }
 

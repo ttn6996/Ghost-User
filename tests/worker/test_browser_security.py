@@ -115,6 +115,38 @@ def test_click_navigating_to_external_origin_blocked(db_session: Session, fixtur
     assert "Security policy blocked navigation" in run.error_summary or "Navigation out-of-bounds" in run.error_summary
 
 
+def test_popup_navigating_to_external_origin_blocked(db_session: Session, fixture_server: str):
+    """3b. Clicking a link that opens a popup to an external origin must be blocked."""
+    project = Project(name="Popup Guard Project", base_url=fixture_server)
+    db_session.add(project)
+    db_session.commit()
+
+    test_case = TestCase(
+        project_id=project.id,
+        name="Popup External Link",
+        definition_json={
+            "name": "Popup External Link",
+            "steps": [
+                {"action": "goto", "url": "/popup-external"},
+                {"action": "click", "selector": "#popup-link"},
+            ],
+        },
+    )
+    db_session.add(test_case)
+    db_session.commit()
+
+    run = TestRun(test_case_id=test_case.id, status=RunStatus.QUEUED.value)
+    db_session.add(run)
+    db_session.commit()
+
+    engine = BrowserExecutionEngine(db_session)
+    status = engine.execute_run(run.id)
+    assert status == RunStatus.ERROR
+
+    db_session.refresh(run)
+    assert "Security policy blocked navigation" in run.error_summary or "Popup destination blocked" in run.error_summary
+
+
 def test_redirect_to_blocked_destination_blocked(db_session: Session, fixture_server: str):
     """4. HTTP redirect to a blocked metadata/private destination must be aborted."""
     project = Project(name="Redirect Guard", base_url=fixture_server)

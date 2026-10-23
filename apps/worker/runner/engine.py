@@ -137,6 +137,26 @@ class BrowserExecutionEngine:
                 # Also monitor popups or new tabs
                 def on_new_page(new_p):
                     new_p.set_default_timeout(settings.ACTION_TIMEOUT_MS)
+                    def check_popup_nav(frame):
+                        if frame == new_p.main_frame and frame.url and frame.url != "about:blank":
+                            ok, reason = check_browser_request_security(
+                                frame.url,
+                                base_url=project.base_url,
+                                is_navigation=True,
+                                allow_local=settings.ALLOW_LOCAL_TARGETS,
+                            )
+                            if not ok:
+                                logger.warning(f"Security policy blocked popup: {frame.url} ({reason})")
+                                blocked_events.append({
+                                    "url": frame.url,
+                                    "reason": f"Popup destination blocked: {reason}",
+                                    "is_navigation": "True",
+                                })
+                                try:
+                                    new_p.close()
+                                except Exception:
+                                    pass
+                    new_p.on("framenavigated", check_popup_nav)
                 context.on("page", on_new_page)
 
                 page = context.new_page()

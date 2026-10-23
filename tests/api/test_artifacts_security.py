@@ -25,6 +25,27 @@ def test_path_traversal_blocked(client: TestClient, tmp_path):
     assert res.status_code in (400, 404)
 
 
+def test_symlink_artifact_rejected(client: TestClient, tmp_path):
+    os.environ["ARTIFACT_STORAGE_DIR"] = str(tmp_path)
+
+    run_dir = tmp_path / "symlink-run-id"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    real_file = run_dir / "real.png"
+    real_file.write_bytes(b"image_content")
+
+    # Create symlink pointing to the file
+    symlink_file = run_dir / "symlink.png"
+    try:
+        symlink_file.symlink_to(real_file)
+    except (OSError, NotImplementedError):
+        # On Windows without developer mode/admin rights, symlinks may not be allowed
+        return
+
+    res = client.get("/api/v1/artifacts/symlink-run-id/symlink.png")
+    assert res.status_code == 400
+    assert "Symlinks not permitted" in res.json().get("detail", "")
+
+
 def test_production_mode_authorization_boundary(client: TestClient, tmp_path):
     os.environ["ARTIFACT_STORAGE_DIR"] = str(tmp_path)
 

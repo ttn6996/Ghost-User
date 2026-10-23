@@ -106,6 +106,20 @@ class TestFixtureHandler(BaseHTTPRequestHandler):
 </html>"""
             self.wfile.write(html.encode("utf-8"))
 
+        elif path == "/popup-external":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            html = """<!DOCTYPE html>
+<html>
+<head><title>Popup Test</title></head>
+<body>
+  <h1>Popup External Test</h1>
+  <a id="popup-link" href="https://example.com/external-popup" target="_blank">Open External Popup</a>
+</body>
+</html>"""
+            self.wfile.write(html.encode("utf-8"))
+
         elif path == "/redirect-to-metadata":
             self.send_response(302)
             self.send_header("Location", "http://169.254.169.254/latest/meta-data/")
