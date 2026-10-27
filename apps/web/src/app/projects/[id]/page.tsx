@@ -353,7 +353,7 @@ export default function ProjectDetailPage() {
                   </span>
                 </h3>
                 <p className="text-xs text-zinc-400 max-w-2xl">
-                  Playwright sẽ tự động "bò" khắp website {project.base_url}, quét mọi liên kết, tìm các form đăng nhập, form tìm kiếm, phát hiện link chết (404/500) và tự động tạo kịch bản kiểm thử.
+                  Playwright sẽ tự động &quot;bò&quot; khắp website {project.base_url}, quét mọi liên kết, tìm các form đăng nhập, form tìm kiếm, phát hiện link chết (404/500) và tự động tạo kịch bản kiểm thử.
                 </p>
               </div>
 
@@ -488,7 +488,7 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : (
                   <div className="p-6 text-center text-xs font-mono text-zinc-500 border border-zinc-800 rounded-xl bg-[#0f0f12]">
-                    Chưa có kịch bản nào được sinh. Bấm "Bắt đầu khám phá" để quét website.
+                    Chưa có kịch bản nào được sinh. Bấm &quot;Bắt đầu khám phá&quot; để quét website.
                   </div>
                 )}
               </div>
