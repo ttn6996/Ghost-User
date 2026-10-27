@@ -116,3 +116,22 @@ class Schedule(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     test_case = relationship("TestCase", back_populates="schedules")
+
+
+class DiscoveryReport(Base):
+    __tablename__ = "discovery_reports"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    project_id = Column(String(36), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(50), default="completed", nullable=False)
+    base_url = Column(String(2048), nullable=False)
+    pages_count = Column(Integer, default=0, nullable=False)
+    broken_links_count = Column(Integer, default=0, nullable=False)
+    forms_count = Column(Integer, default=0, nullable=False)
+    pages_json = Column(JSON, nullable=True)
+    suggested_tests_json = Column(JSON, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+
+    project = relationship("Project", backref="discovery_reports")

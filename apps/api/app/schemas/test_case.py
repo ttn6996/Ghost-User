@@ -60,6 +60,22 @@ class TestCaseValidateResponse(BaseModel):
     errors: list[str] = []
 
 
+class TestCaseGenerateRequest(BaseModel):
+    __test__ = False
+    project_id: str
+    prompt: str = Field(..., min_length=2, max_length=2000)
+    page_path: Optional[str] = Field(default=None, max_length=2048)
+
+
+class TestCaseGenerateResponse(BaseModel):
+    __test__ = False
+    suggested_name: str
+    suggested_description: str
+    steps: list[dict[str, Any]]
+    model_used: str
+    explanation: str
+
+
 class TestCaseResponse(TestCaseBase):
     id: str
     project_id: str

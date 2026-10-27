@@ -1,7 +1,7 @@
 """Project schemas for request validation and serialization."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 
 
@@ -44,3 +44,26 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DiscoveryReportResponse(BaseModel):
+    id: str
+    project_id: str
+    status: str
+    base_url: str
+    pages_count: int
+    broken_links_count: int
+    forms_count: int
+    pages_json: Optional[List[Dict[str, Any]]] = None
+    suggested_tests_json: Optional[List[Dict[str, Any]]] = None
+    error_message: Optional[str] = None
+    created_at: datetime
+    finished_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiscoverySaveTestRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    steps: List[Dict[str, Any]]

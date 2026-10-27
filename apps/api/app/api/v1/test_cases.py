@@ -13,10 +13,41 @@ from app.schemas.test_case import (
     TestCaseResponse,
     TestCaseValidateRequest,
     TestCaseValidateResponse,
+    TestCaseGenerateRequest,
+    TestCaseGenerateResponse,
 )
 from packages.shared.schemas import TestDefinition
+from app.services.prompt_generator import PromptGenerator
 
 router = APIRouter(prefix="/test-cases", tags=["Test Cases"])
+
+
+@router.post("/generate", response_model=TestCaseGenerateResponse)
+async def generate_test_case_from_prompt(
+    payload: TestCaseGenerateRequest,
+    db: Session = Depends(get_db),
+):
+    """Generate a structured, valid test journey from natural language prompt."""
+    project = db.get(Project, payload.project_id)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{payload.project_id}' not found",
+        )
+
+    generator = PromptGenerator()
+    try:
+        result = await generator.generate(
+            prompt=payload.prompt,
+            base_url=project.base_url,
+            page_path=payload.page_path,
+        )
+        return TestCaseGenerateResponse(**result)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to generate test journey: {str(e)}",
+        )
 
 
 @router.post("/validate", response_model=TestCaseValidateResponse)

@@ -4,7 +4,10 @@ import {
   TestRun, 
   Schedule, 
   OverviewStats, 
-  TestDefinition 
+  TestDefinition,
+  TestCaseGenerateResponse,
+  DiscoveryReport,
+  StepAction,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -53,6 +56,17 @@ export const api = {
     request<Project>(`/api/v1/projects/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteProject: (id: string) => 
     request<void>(`/api/v1/projects/${id}`, { method: "DELETE" }),
+  discoverProject: (projectId: string, maxPages: number = 15) => 
+    request<DiscoveryReport>(`/api/v1/projects/${projectId}/discover?max_pages=${maxPages}`, {
+      method: "POST",
+    }),
+  getLatestDiscovery: (projectId: string) => 
+    request<DiscoveryReport | null>(`/api/v1/projects/${projectId}/discover/latest`),
+  saveDiscoveredTest: (projectId: string, data: { name: string; description?: string; steps: StepAction[] }) => 
+    request<TestCase>(`/api/v1/projects/${projectId}/discover/save-test`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   // Test Cases
   getTestCases: (projectId?: string) => 
@@ -68,6 +82,11 @@ export const api = {
     request<{ valid: boolean; step_count: number; errors: string[] }>("/api/v1/test-cases/validate", {
       method: "POST",
       body: JSON.stringify({ definition_json }),
+    }),
+  generateTestCase: (data: { project_id: string; prompt: string; page_path?: string }) => 
+    request<TestCaseGenerateResponse>("/api/v1/test-cases/generate", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 
   // Test Runs

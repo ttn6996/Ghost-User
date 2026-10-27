@@ -101,6 +101,51 @@ export interface Schedule {
   updated_at: string;
 }
 
+export interface TestCaseGenerateResponse {
+  suggested_name: string;
+  suggested_description: string;
+  steps: StepAction[];
+  model_used: string;
+  explanation: string;
+}
+
+export interface DiscoveryPage {
+  url: string;
+  path: string;
+  title: string;
+  status_code: number;
+  forms_count: number;
+  links_found: number;
+  is_broken: boolean;
+}
+
+export interface DiscoveredForm {
+  page_path: string;
+  page_url: string;
+  form_type: string;
+  inputs: { name: string; id: string; type: string; placeholder: string }[];
+  buttons: { type: string; text: string }[];
+}
+
+export interface DiscoveryReport {
+  id: string;
+  project_id: string;
+  status: string;
+  base_url: string;
+  pages_count: number;
+  broken_links_count: number;
+  forms_count: number;
+  pages_json?: DiscoveryPage[];
+  suggested_tests_json?: {
+    name: string;
+    description?: string;
+    steps: StepAction[];
+  }[];
+  error_message?: string;
+  created_at: string;
+  finished_at?: string;
+}
+
 export interface OverviewStats {
   total_projects: number;
   total_test_cases: number;

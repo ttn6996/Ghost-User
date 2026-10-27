@@ -39,6 +39,12 @@ function NewTestContent() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // AI Prompt State
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+
   useEffect(() => {
     api.getProjects().then((projs) => {
       setProjects(projs);
@@ -82,6 +88,40 @@ function NewTestContent() {
         { action: "assert_visible", selector: "#welcome-banner" },
         { action: "screenshot", name: "dashboard_loaded" },
       ]);
+    }
+  };
+
+  const handleGenerateAi = async (customPrompt?: string) => {
+    const textToUse = customPrompt || aiPrompt;
+    if (!selectedProjectId) {
+      setAiError("Vui lòng chọn Target Project trước khi tạo kịch bản");
+      return;
+    }
+    if (!textToUse.trim()) {
+      setAiError("Vui lòng nhập câu lệnh mô tả kịch bản bạn muốn test");
+      return;
+    }
+
+    try {
+      setGeneratingAi(true);
+      setAiError(null);
+      setAiSuccessMessage(null);
+
+      const res = await api.generateTestCase({
+        project_id: selectedProjectId,
+        prompt: textToUse.trim(),
+      });
+
+      setName(res.suggested_name);
+      if (res.suggested_description) {
+        setDescription(res.suggested_description);
+      }
+      setSteps(res.steps);
+      setAiSuccessMessage(`✨ Đã tự động tạo ${res.steps.length} bước kiểm thử thành công bằng ${res.model_used}!`);
+    } catch (err: any) {
+      setAiError(err.message || "Tự động sinh kịch bản thất bại.");
+    } finally {
+      setGeneratingAi(false);
     }
   };
 
@@ -232,6 +272,91 @@ function NewTestContent() {
             <label htmlFor="enabled-check" className="text-xs text-zinc-300 font-mono">
               Enabled (active for execution and scheduling)
             </label>
+          </div>
+        </div>
+
+        {/* AI Prompt-to-Journey Card */}
+        <div className="rounded-xl border border-purple-500/30 bg-gradient-to-b from-purple-950/20 via-[#0f0f12] to-[#0f0f12] p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                  <span>AI Prompt-to-Journey</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                    Tự động hoá
+                  </span>
+                </h3>
+                <p className="text-[11px] text-zinc-400">
+                  Nhập câu lệnh bằng tiếng Việt hoặc tiếng Anh — hệ thống sẽ tự động phân tích và tạo kịch bản cho bạn mà không cần nhớ selector.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <div className="relative">
+              <textarea
+                rows={3}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ví dụ: 'Vào trang login, đăng nhập bằng tài khoản user01 và mật khẩu admin123, sau đó kiểm tra xem đã vào được trang chủ chưa và chụp ảnh'"
+                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Quick Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] font-mono text-zinc-500">Gợi ý mẫu:</span>
+              {[
+                { label: "🔑 Đăng nhập user01 / admin123", text: "Vào trang login, đăng nhập bằng tài khoản user01 và mật khẩu admin123, sau đó kiểm tra đã vào được trang chủ chưa" },
+                { label: "❌ Thử đăng nhập sai mật khẩu", text: "Đăng nhập với user01 và mật khẩu sai abc để kiểm tra thông báo lỗi hiển thị" },
+                { label: "🔍 Tìm kiếm sản phẩm giáo trình", text: "Vào chợ marketplace, tìm kiếm sản phẩm giáo trình và chụp ảnh kết quả" },
+                { label: "📖 Xem hướng dẫn & mở FAQ", text: "Vào trang /about-guide, kiểm tra tiêu đề và mở FAQ giải đáp" },
+                { label: "📝 Điền form đăng ký", text: "Vào trang /register, điền form đăng ký với họ tên Nguyễn Văn A, email test@example.com và mật khẩu Pass@123" },
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setAiPrompt(chip.text);
+                    handleGenerateAi(chip.text);
+                  }}
+                  className="px-2 py-0.5 text-[11px] rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-purple-300 transition-colors"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex-1">
+                {aiError && (
+                  <p className="text-xs text-rose-400 flex items-center gap-1.5 font-mono">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{aiError}</span>
+                  </p>
+                )}
+                {aiSuccessMessage && (
+                  <p className="text-xs text-emerald-400 flex items-center gap-1.5 font-mono">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>{aiSuccessMessage}</span>
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={generatingAi}
+                onClick={() => handleGenerateAi()}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white flex items-center gap-2 transition disabled:opacity-50 shadow-sm shrink-0"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{generatingAi ? "Đang phân tích & tạo..." : "Tự động tạo kịch bản"}</span>
+              </button>
+            </div>
           </div>
         </div>
 
