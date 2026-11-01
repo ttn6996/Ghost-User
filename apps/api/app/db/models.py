@@ -34,6 +34,13 @@ class Project(Base):
     name = Column(String(255), nullable=False, index=True)
     base_url = Column(String(2048), nullable=False)
     description = Column(Text, nullable=True)
+    allowed_domains = Column(JSON, nullable=False, default=list)
+    source_code_path = Column(String(1024), nullable=True)
+    allow_local_loopback = Column(Boolean, nullable=False, default=False)
+    execution_mode = Column(String(50), nullable=False, default="mode_a_manual")
+    auth_profile_json = Column(JSON, nullable=True, default=dict)
+    secrets_json = Column(JSON, nullable=True, default=dict)
+    secrets_masked = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 

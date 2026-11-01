@@ -1,7 +1,7 @@
 """Playwright action executors for browser journey steps."""
 
 import time
-from typing import Optional
+from typing import List, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
 from packages.shared.schemas import (
@@ -39,13 +39,19 @@ def execute_action(
     step_index: int,
     artifact_manager: ArtifactManager,
     allow_local: bool = False,
+    allowed_domains: Optional[List[str]] = None,
 ) -> Optional[str]:
     """Executes a single test action. Returns relative screenshot path if a screenshot was taken."""
     timeout = action.timeout_ms or 10000
 
     try:
         if isinstance(action, GotoAction):
-            target_url = resolve_target_url(action.url, base_url, allow_local=allow_local)
+            target_url = resolve_target_url(
+                action.url,
+                base_url,
+                allowed_domains=allowed_domains,
+                allow_local=allow_local,
+            )
             page.goto(target_url, timeout=timeout, wait_until="load")
             return None
 

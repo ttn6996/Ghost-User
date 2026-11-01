@@ -159,7 +159,31 @@ class TestFixtureHandler(BaseHTTPRequestHandler):
 </head>
 <body>
   <h1>Broken Page</h1>
-  <p>This page deliberately contains console errors.</p>
+</body>
+</html>"""
+            self.wfile.write(html.encode("utf-8"))
+
+        elif path == "/spinner":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            html = """<!DOCTYPE html>
+<html>
+<head>
+  <title>Spinner Page</title>
+  <script>
+    setTimeout(() => {
+      const spinner = document.getElementById('loading-spinner');
+      if (spinner) spinner.style.display = 'none';
+      const content = document.getElementById('loaded-content');
+      if (content) content.style.display = 'block';
+    }, 200);
+  </script>
+</head>
+<body>
+  <h1>Async Content Test</h1>
+  <div id="loading-spinner">Loading...</div>
+  <div id="loaded-content" style="display:none;">Data Loaded Successfully</div>
 </body>
 </html>"""
             self.wfile.write(html.encode("utf-8"))

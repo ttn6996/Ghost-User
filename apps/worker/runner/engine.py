@@ -18,6 +18,13 @@ from apps.worker.runner.actions import (
 )
 from apps.worker.runner.artifacts import ArtifactManager
 from apps.worker.runner.security import check_browser_request_security, SecurityValidationError
+from apps.worker.runner.masking import (
+    extract_all_run_secrets,
+    mask_console_logs,
+    mask_page_errors,
+    mask_playwright_trace,
+    mask_sensitive_data,
+)
 
 
 def utc_now() -> datetime:
@@ -102,6 +109,12 @@ class BrowserExecutionEngine:
                 if settings.TRACE_ON_FAILURE:
                     context.tracing.start(screenshots=True, snapshots=True, sources=True)
 
+                allowed_domains: List[str] = getattr(project, "allowed_domains", None) or []
+                allow_local: bool = bool(getattr(project, "allow_local_loopback", False) or settings.ALLOW_LOCAL_TARGETS)
+                auth_profile_json = getattr(project, "auth_profile_json", None)
+                project_secrets = getattr(project, "secrets_json", None)
+                run_secrets: List[str] = extract_all_run_secrets(definition, auth_profile_json, project_secrets)
+
                 # Real-time network and navigation security controls
                 blocked_events: List[Dict[str, str]] = []
 
@@ -112,8 +125,9 @@ class BrowserExecutionEngine:
                     is_allowed, reason = check_browser_request_security(
                         url=url,
                         base_url=project.base_url,
+                        allowed_domains=allowed_domains,
                         is_navigation=is_nav,
-                        allow_local=settings.ALLOW_LOCAL_TARGETS,
+                        allow_local=allow_local,
                     )
                     if not is_allowed:
                         logger.warning(f"Security policy blocked request: {url} (is_nav={is_nav}, reason={reason})")
@@ -142,8 +156,9 @@ class BrowserExecutionEngine:
                             ok, reason = check_browser_request_security(
                                 frame.url,
                                 base_url=project.base_url,
+                                allowed_domains=allowed_domains,
                                 is_navigation=True,
-                                allow_local=settings.ALLOW_LOCAL_TARGETS,
+                                allow_local=allow_local,
                             )
                             if not ok:
                                 logger.warning(f"Security policy blocked popup: {frame.url} ({reason})")
@@ -202,7 +217,8 @@ class BrowserExecutionEngine:
                             base_url=project.base_url,
                             step_index=idx,
                             artifact_manager=artifact_manager,
-                            allow_local=settings.ALLOW_LOCAL_TARGETS,
+                            allow_local=allow_local,
+                            allowed_domains=allowed_domains,
                         )
 
                         # Verify no navigations were blocked during this step
@@ -216,8 +232,9 @@ class BrowserExecutionEngine:
                             url_ok, reason = check_browser_request_security(
                                 page.url,
                                 base_url=project.base_url,
+                                allowed_domains=allowed_domains,
                                 is_navigation=True,
-                                allow_local=settings.ALLOW_LOCAL_TARGETS,
+                                allow_local=allow_local,
                             )
                             if not url_ok:
                                 raise StepExecutionError(f"Security violation: Page is at disallowed location '{page.url}': {reason}")
@@ -264,7 +281,7 @@ class BrowserExecutionEngine:
                         started_at=step_start,
                         finished_at=step_end,
                         duration_ms=duration,
-                        error_message=step_error,
+                        error_message=mask_sensitive_data(step_error, secrets=run_secrets) if step_error else None,
                         screenshot_path=step_screenshot,
                     )
                     self.db.add(step_record)
@@ -274,12 +291,14 @@ class BrowserExecutionEngine:
                         # Stop execution on first failure/error
                         break
 
-                # Save trace if run failed or had errors
+                # Save trace if run failed or had errors and sanitize secrets
                 if final_status in (RunStatus.FAILED, RunStatus.ERROR) and settings.TRACE_ON_FAILURE:
                     try:
                         trace_abs, trace_rel = artifact_manager.get_trace_path()
                         context.tracing.stop(path=str(trace_abs))
                         trace_rel_path = trace_rel
+                        if trace_abs.exists():
+                            mask_playwright_trace(trace_abs, secrets=run_secrets)
                     except Exception as trace_err:
                         logger.warning(f"Failed to save Playwright trace: {trace_err}")
                 elif settings.TRACE_ON_FAILURE and context:
@@ -311,16 +330,16 @@ class BrowserExecutionEngine:
             except Exception:
                 pass
 
-        # Update final run record
+        # Update final run record with masked secrets
         finished_time = utc_now()
         total_duration = int((finished_time - start_time).total_seconds() * 1000)
 
         run.status = final_status.value
         run.finished_at = finished_time
         run.duration_ms = total_duration
-        run.error_summary = error_summary
-        run.console_logs_json = console_logs
-        run.page_errors_json = page_errors
+        run.error_summary = mask_sensitive_data(error_summary, secrets=run_secrets) if error_summary else None
+        run.console_logs_json = mask_console_logs(console_logs, secrets=run_secrets) if console_logs else None
+        run.page_errors_json = mask_page_errors(page_errors, secrets=run_secrets) if page_errors else None
         run.trace_path = trace_rel_path
 
         self.db.commit()
