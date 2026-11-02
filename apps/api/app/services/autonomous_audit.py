@@ -44,7 +44,7 @@ class AutonomousAuditService:
             try:
                 parser = SourceCodeParser(source_path)
                 scan_res = parser.parse()
-                frameworks = scan_res.detected_frameworks
+                frameworks = [f.name for f in scan_res.frameworks]
                 static_routes = [r.path for r in scan_res.routes]
                 source_forms = [f.model_dump() for f in scan_res.forms]
                 logger.info(
