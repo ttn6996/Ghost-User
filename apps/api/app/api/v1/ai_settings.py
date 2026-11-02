@@ -1,5 +1,6 @@
 """API endpoints for Multi-AI Provider configuration, dynamic probing, and automatic key rotation."""
 
+import logging
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -16,6 +17,8 @@ from app.schemas.ai_settings import (
     AITestConnectionResponse,
 )
 from app.services.ai_client import AIClientService
+
+logger = logging.getLogger("ghost-user")
 
 router = APIRouter(prefix="/ai-settings", tags=["AI Settings"])
 
@@ -55,80 +58,88 @@ def get_ai_settings(db: Session = Depends(get_db)):
 @router.post("", response_model=AISettingResponse)
 def save_ai_settings(payload: AISettingRequest, db: Session = Depends(get_db)):
     """Saves or updates system AI model provider configuration with multi-key pool support."""
-    setting = db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
-    existing_pool: List[str] = setting.api_keys_json if (setting and setting.api_keys_json) else []
-    if setting and setting.api_key and setting.api_key not in existing_pool:
-        existing_pool.insert(0, setting.api_key)
+    try:
+        setting = db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
+        existing_pool: List[str] = setting.api_keys_json if (setting and setting.api_keys_json) else []
+        if setting and setting.api_key and setting.api_key not in existing_pool:
+            existing_pool.insert(0, setting.api_key)
 
-    # Resolve incoming key pool
-    resolved_pool: List[str] = []
+        # Resolve incoming key pool
+        resolved_pool: List[str] = []
 
-    # Priority 1: api_keys list if supplied
-    if payload.api_keys is not None:
-        for idx, k in enumerate(payload.api_keys):
-            if not k:
-                continue
-            clean = k.strip()
-            # If front-end sent back a masked placeholder, preserve original key from existing pool
-            if "••" in clean and idx < len(existing_pool):
-                resolved_pool.append(existing_pool[idx])
+        # Priority 1: api_keys list if supplied
+        if payload.api_keys is not None:
+            for idx, k in enumerate(payload.api_keys):
+                if not k:
+                    continue
+                clean = k.strip()
+                # If front-end sent back a masked placeholder, preserve original key from existing pool
+                if "••" in clean and idx < len(existing_pool):
+                    resolved_pool.append(existing_pool[idx])
+                elif clean and not clean.startswith("••"):
+                    for sub in clean.replace(",", "\n").splitlines():
+                        sub_c = sub.strip()
+                        if sub_c and sub_c not in resolved_pool:
+                            resolved_pool.append(sub_c)
+
+        # Priority 2: api_key string if provided
+        if payload.api_key:
+            clean = payload.api_key.strip()
+            if "••" in clean and existing_pool:
+                if not resolved_pool:
+                    resolved_pool = list(existing_pool)
             elif clean and not clean.startswith("••"):
                 for sub in clean.replace(",", "\n").splitlines():
                     sub_c = sub.strip()
                     if sub_c and sub_c not in resolved_pool:
                         resolved_pool.append(sub_c)
 
-    # Priority 2: api_key string if provided
-    if payload.api_key:
-        clean = payload.api_key.strip()
-        if "••" in clean and existing_pool:
-            if not resolved_pool:
-                resolved_pool = list(existing_pool)
-        elif clean and not clean.startswith("••"):
-            for sub in clean.replace(",", "\n").splitlines():
-                sub_c = sub.strip()
-                if sub_c and sub_c not in resolved_pool:
-                    resolved_pool.append(sub_c)
+        primary_key = resolved_pool[0] if resolved_pool else (setting.api_key if setting else None)
 
-    primary_key = resolved_pool[0] if resolved_pool else (setting.api_key if setting else None)
+        if not setting:
+            setting = AISetting(
+                provider=payload.provider,
+                base_url=payload.base_url,
+                api_key=primary_key,
+                api_keys_json=resolved_pool if resolved_pool else None,
+                model=payload.model,
+                enabled=payload.enabled,
+            )
+            db.add(setting)
+        else:
+            setting.provider = payload.provider
+            setting.base_url = payload.base_url
+            if resolved_pool:
+                setting.api_key = primary_key
+                setting.api_keys_json = resolved_pool
+            setting.model = payload.model
+            setting.enabled = payload.enabled
+            setting.updated_at = utc_now()
 
-    if not setting:
-        setting = AISetting(
-            provider=payload.provider,
-            base_url=payload.base_url,
-            api_key=primary_key,
-            api_keys_json=resolved_pool if resolved_pool else None,
-            model=payload.model,
-            enabled=payload.enabled,
+        db.commit()
+        db.refresh(setting)
+
+        raw_pool = setting.api_keys_json if setting.api_keys_json else ([setting.api_key] if setting.api_key else [])
+        masked_pool = [mask_key(k) for k in raw_pool if k]
+
+        return AISettingResponse(
+            id=setting.id,
+            provider=setting.provider,
+            base_url=setting.base_url,
+            api_key_masked=mask_key(setting.api_key),
+            api_keys_masked=masked_pool,
+            model=setting.model,
+            enabled=setting.enabled,
+            created_at=setting.created_at,
+            updated_at=setting.updated_at,
         )
-        db.add(setting)
-    else:
-        setting.provider = payload.provider
-        setting.base_url = payload.base_url
-        if resolved_pool:
-            setting.api_key = primary_key
-            setting.api_keys_json = resolved_pool
-        setting.model = payload.model
-        setting.enabled = payload.enabled
-        setting.updated_at = utc_now()
-
-    db.commit()
-    db.refresh(setting)
-
-    raw_pool = setting.api_keys_json if setting.api_keys_json else ([setting.api_key] if setting.api_key else [])
-    masked_pool = [mask_key(k) for k in raw_pool if k]
-
-    return AISettingResponse(
-        id=setting.id,
-        provider=setting.provider,
-        base_url=setting.base_url,
-        api_key_masked=mask_key(setting.api_key),
-        api_keys_masked=masked_pool,
-        model=setting.model,
-        enabled=setting.enabled,
-        created_at=setting.created_at,
-        updated_at=setting.updated_at,
-    )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving AI settings: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi lưu cấu hình: {str(e)}",
+        )
 
 
 @router.post("/load-models", response_model=AILoadModelsResponse)

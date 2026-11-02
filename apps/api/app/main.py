@@ -17,6 +17,30 @@ from app.api.v1 import api_v1_router
 setup_logging()
 
 
+def _ensure_sqlite_schema_compatibility():
+    """Dynamically applies schema evolution for SQLite so existing databases automatically get new columns."""
+    try:
+        with engine.connect() as conn:
+            # Check ai_settings table
+            res = conn.execute(text("PRAGMA table_info(ai_settings)")).fetchall()
+            cols = [r[1] for r in res]
+            if cols and "api_keys_json" not in cols:
+                conn.execute(text("ALTER TABLE ai_settings ADD COLUMN api_keys_json JSON"))
+                conn.commit()
+                logger.info("Auto-migrated: Added 'api_keys_json' column to ai_settings table.")
+            # Check projects table
+            res_p = conn.execute(text("PRAGMA table_info(projects)")).fetchall()
+            cols_p = [r[1] for r in res_p]
+            if cols_p and "auth_profile_json" not in cols_p:
+                conn.execute(text("ALTER TABLE projects ADD COLUMN auth_profile_json JSON"))
+                conn.commit()
+            if cols_p and "secrets_json" not in cols_p:
+                conn.execute(text("ALTER TABLE projects ADD COLUMN secrets_json JSON"))
+                conn.commit()
+    except Exception as e:
+        logger.debug(f"Schema auto-migration check note: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Ghost-User API...")
@@ -25,6 +49,7 @@ async def lifespan(app: FastAPI):
     artifact_path.mkdir(parents=True, exist_ok=True)
     # Ensure database tables exist (for dev/sqlite fallback before migrations)
     Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_schema_compatibility()
     logger.info("Ghost-User API initialized successfully.")
     yield
     logger.info("Shutting down Ghost-User API...")
@@ -61,7 +86,6 @@ def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
         db_status = "unhealthy"
-
     return {
         "status": "healthy" if db_status == "healthy" else "degraded",
         "service": "ghost-user-api",
