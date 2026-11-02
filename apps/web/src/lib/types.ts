@@ -243,11 +243,20 @@ export interface AutonomousAuditResponse {
 }
 
 
+export interface AIKeyHealth {
+  index: number;
+  key_masked: string;
+  success: boolean;
+  latency_ms: number;
+  error?: string;
+}
+
 export interface AISetting {
   id: string;
   provider: string; // 'gemini' | 'openai' | 'anthropic' | 'custom_openai'
   base_url?: string;
   api_key_masked?: string;
+  api_keys_masked?: string[];
   model: string;
   enabled: boolean;
   created_at: string;
@@ -262,4 +271,7 @@ export interface AITestConnectionResult {
   latency_ms: number;
   reply?: string;
   error?: string;
+  keys_tested?: number;
+  keys_healthy?: number;
+  key_details?: AIKeyHealth[];
 }

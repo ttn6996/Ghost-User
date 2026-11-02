@@ -62,6 +62,7 @@ export default function SettingsPage() {
   const [aiBaseUrl, setAiBaseUrl] = useState(PROVIDER_PRESETS.gemini.defaultUrl);
   const [aiApiKey, setAiApiKey] = useState("");
   const [maskedKeyFromDb, setMaskedKeyFromDb] = useState<string | null>(null);
+  const [savedKeysPool, setSavedKeysPool] = useState<string[]>([]);
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiModel, setAiModel] = useState(PROVIDER_PRESETS.gemini.defaultModel);
   const [aiEnabled, setAiEnabled] = useState(true);
@@ -108,7 +109,11 @@ export default function SettingsPage() {
         setAiBaseUrl(setting.base_url || PROVIDER_PRESETS[setting.provider]?.defaultUrl || "");
         setAiModel(setting.model || "gemini-1.5-flash");
         setAiEnabled(setting.enabled ?? true);
-        if (setting.api_key_masked) {
+        if (setting.api_keys_masked && setting.api_keys_masked.length > 0) {
+          setSavedKeysPool(setting.api_keys_masked);
+          setMaskedKeyFromDb(setting.api_keys_masked[0]);
+        } else if (setting.api_key_masked) {
+          setSavedKeysPool([setting.api_key_masked]);
           setMaskedKeyFromDb(setting.api_key_masked);
         }
       }
@@ -137,10 +142,14 @@ export default function SettingsPage() {
     try {
       setLoadingModels(true);
       setLoadModelsMsg(null);
+      const parsedKeys = aiApiKey
+        ? aiApiKey.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+        : [];
       const res = await api.loadAIModels({
         provider: aiProvider,
         base_url: aiBaseUrl || undefined,
-        api_key: aiApiKey || undefined,
+        api_keys: parsedKeys.length > 0 ? parsedKeys : undefined,
+        api_key: parsedKeys.length > 0 ? parsedKeys[0] : (aiApiKey || undefined),
       });
       setAvailableModels(res.models || []);
       setLoadModelsMsg(`Đã tải thành công ${res.models.length} model khả dụng từ provider!`);
@@ -158,10 +167,14 @@ export default function SettingsPage() {
     try {
       setTestingAI(true);
       setAiTestResult(null);
+      const parsedKeys = aiApiKey
+        ? aiApiKey.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+        : [];
       const res = await api.testAIConnection({
         provider: aiProvider,
         base_url: aiBaseUrl || undefined,
-        api_key: aiApiKey || undefined,
+        api_keys: parsedKeys.length > 0 ? parsedKeys : undefined,
+        api_key: parsedKeys.length > 0 ? parsedKeys[0] : (aiApiKey || undefined),
         model: aiModel || undefined,
       });
       setAiTestResult(res);
@@ -183,14 +196,22 @@ export default function SettingsPage() {
     try {
       setSavingAI(true);
       setSaveSuccess(false);
+      const parsedKeys = aiApiKey
+        ? aiApiKey.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+        : [];
       const saved = await api.saveAISettings({
         provider: aiProvider,
         base_url: aiBaseUrl || undefined,
-        api_key: aiApiKey || undefined,
+        api_keys: parsedKeys.length > 0 ? parsedKeys : undefined,
+        api_key: parsedKeys.length > 0 ? parsedKeys[0] : (aiApiKey || undefined),
         model: aiModel,
         enabled: aiEnabled,
       });
-      if (saved.api_key_masked) {
+      if (saved.api_keys_masked && saved.api_keys_masked.length > 0) {
+        setSavedKeysPool(saved.api_keys_masked);
+        setMaskedKeyFromDb(saved.api_keys_masked[0]);
+      } else if (saved.api_key_masked) {
+        setSavedKeysPool([saved.api_key_masked]);
         setMaskedKeyFromDb(saved.api_key_masked);
       }
       setAiApiKey("");
@@ -286,34 +307,62 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 3. API Key */}
+          {/* 3. API Key & Auto-Rotation Key Pool */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-mono text-zinc-300">
-                API Key {aiProvider === "custom_openai" ? "(Tùy chọn nếu dùng Ollama local)" : "*"}
+            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+              <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
+                <span>API Key Pool (Danh sách khóa xoay tua tự động)</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 font-sans border border-purple-500/30">
+                  Auto-Rotate 429
+                </span>
               </label>
-              {maskedKeyFromDb && (
-                <span className="text-[11px] font-mono text-zinc-500">
-                  Đã lưu: <strong className="text-zinc-300">{maskedKeyFromDb}</strong>
+              {savedKeysPool.length > 0 && (
+                <span className="text-[11px] font-mono text-zinc-400">
+                  Đang có <strong className="text-emerald-400">{savedKeysPool.length}</strong> key trong pool
                 </span>
               )}
             </div>
+
+            {/* Saved Keys Pool Badges */}
+            {savedKeysPool.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2 p-2 rounded-lg bg-zinc-950/60 border border-zinc-800/80">
+                {savedKeysPool.map((k, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-[11px] font-mono text-zinc-300"
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${idx === 0 ? "bg-emerald-400" : "bg-purple-400"}`} />
+                    <span className="text-zinc-500 font-semibold">{idx === 0 ? "Primary" : `Backup #${idx}`}:</span>
+                    <span>{k}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="relative">
-              <input
-                type={showApiKey ? "text" : "password"}
+              <textarea
+                rows={showApiKey ? 3 : 2}
                 value={aiApiKey}
                 onChange={(e) => setAiApiKey(e.target.value)}
-                placeholder={maskedKeyFromDb ? "Nhập key mới nếu muốn thay đổi..." : "e.g. AIzaSy... hoặc sk-..."}
+                placeholder={
+                  savedKeysPool.length > 0
+                    ? "Nhập các key mới (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy) để thay thế hoặc mở rộng pool..."
+                    : "Dán một hoặc nhiều API Key vào đây (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy)...\ne.g.\nsk-proj-primaryKey123...\nsk-proj-backupKey456..."
+                }
                 className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 pr-10 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-zinc-300"
+                title={showApiKey ? "Ẩn nội dung key" : "Hiện nội dung key"}
               >
                 {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            <p className="mt-1 text-[11px] text-zinc-500">
+              💡 <strong>Cơ chế xoay khóa tự động:</strong> Khi key chính gặp lỗi 429 (Hết Token/Rate Limit) hoặc 401, hệ thống sẽ tự động chuyển sang các key dự phòng tiếp theo mà không làm ngắt quãng phiên test của bạn.
+            </p>
           </div>
 
           {/* 4. Model Selection & Dynamic Model Discovery */}
@@ -382,37 +431,59 @@ export default function SettingsPage() {
           {/* Test Result Display */}
           {aiTestResult && (
             <div
-              className={`p-3 rounded-lg border text-xs font-mono flex items-start gap-2.5 ${
+              className={`p-3 rounded-lg border text-xs font-mono space-y-2 ${
                 aiTestResult.success
                   ? "border-emerald-900/60 bg-emerald-950/20 text-emerald-300"
                   : "border-rose-900/60 bg-rose-950/20 text-rose-300"
               }`}
             >
-              {aiTestResult.success ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-              )}
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    {aiTestResult.success ? "Kết nối AI thành công!" : "Kiểm tra kết nối thất bại"}
-                  </span>
-                  <span className="text-[10px] text-zinc-400">
-                    Độ trễ: {aiTestResult.latency_ms}ms
-                  </span>
+              <div className="flex items-start gap-2.5">
+                {aiTestResult.success ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">
+                      {aiTestResult.success
+                        ? `Kết nối AI thành công! (${aiTestResult.keys_healthy ?? 1}/${aiTestResult.keys_tested ?? 1} keys sẵn sàng)`
+                        : "Kiểm tra kết nối thất bại"}
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      Độ trễ trung bình: {aiTestResult.latency_ms}ms
+                    </span>
+                  </div>
+                  {aiTestResult.reply && (
+                    <div className="text-[11px] text-emerald-400/90">
+                      Phản hồi từ {aiTestResult.model}: &quot;{aiTestResult.reply}&quot;
+                    </div>
+                  )}
+                  {aiTestResult.error && (
+                    <div className="text-[11px] text-rose-300 whitespace-pre-wrap">
+                      Chi tiết lỗi: {aiTestResult.error}
+                    </div>
+                  )}
                 </div>
-                {aiTestResult.reply && (
-                  <div className="text-[11px] text-emerald-400/90">
-                    Phản hồi từ {aiTestResult.model}: &quot;{aiTestResult.reply}&quot;
-                  </div>
-                )}
-                {aiTestResult.error && (
-                  <div className="text-[11px] text-rose-300 whitespace-pre-wrap">
-                    Chi tiết lỗi: {aiTestResult.error}
-                  </div>
-                )}
               </div>
+
+              {/* Individual Key Diagnostic Breakdown */}
+              {aiTestResult.key_details && aiTestResult.key_details.length > 1 && (
+                <div className="pt-2 border-t border-zinc-800/60 space-y-1 pl-6">
+                  <div className="text-[11px] font-semibold text-zinc-400 mb-1">Chẩn đoán từng API Key:</div>
+                  {aiTestResult.key_details.map((kd) => (
+                    <div key={kd.index} className="flex items-center justify-between text-[11px] py-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full ${kd.success ? "bg-emerald-400" : "bg-rose-400"}`} />
+                        <span className="text-zinc-400">Key #{kd.index} ({kd.key_masked}):</span>
+                      </span>
+                      <span className={kd.success ? "text-emerald-400" : "text-rose-400"}>
+                        {kd.success ? `Hoạt động (${kd.latency_ms}ms)` : `Lỗi: ${kd.error || "429 / Quota"}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

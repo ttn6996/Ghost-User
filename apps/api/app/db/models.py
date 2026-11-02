@@ -151,6 +151,7 @@ class AISetting(Base):
     provider = Column(String(50), nullable=False, default="gemini")
     base_url = Column(String(1024), nullable=True)
     api_key = Column(String(1024), nullable=True)
+    api_keys_json = Column(JSON, nullable=True)
     model = Column(String(100), nullable=False, default="gemini-1.5-flash")
     temperature = Column(Integer, default=20)
     enabled = Column(Boolean, default=True, nullable=False)

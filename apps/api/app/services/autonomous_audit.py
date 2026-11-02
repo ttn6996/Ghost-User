@@ -180,7 +180,7 @@ class AutonomousAuditService:
         # 5. Optional Multimodal Visual QA via configured AI
         visual_qa_report = None
         ai_setting = self.db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
-        if ai_setting and ai_setting.enabled and ai_setting.api_key:
+        if ai_setting and ai_setting.enabled and (ai_setting.api_key or ai_setting.api_keys_json):
             # Check if any step result has a screenshot
             try:
                 from app.core.config import settings
@@ -201,12 +201,13 @@ class AutonomousAuditService:
                     shot_file = Path(settings.ARTIFACT_STORAGE_DIR) / step_with_shot.screenshot_path
                     if shot_file.exists():
                         img_b64 = base64.b64encode(shot_file.read_bytes()).decode("utf-8")
+                        pool = ai_setting.api_keys_json if ai_setting.api_keys_json else ([ai_setting.api_key] if ai_setting.api_key else [])
                         visual_qa_report = AIClientService.analyze_screenshot_for_ui_bugs(
                             image_base64=img_b64,
                             page_url=project.base_url,
                             provider=ai_setting.provider,
                             base_url=ai_setting.base_url,
-                            api_key=ai_setting.api_key,
+                            api_keys=pool,
                             model=ai_setting.model,
                         )
                         logger.info(f"Visual QA Audit finished with score {visual_qa_report.get('visual_score_out_of_100')}/100")
