@@ -8,6 +8,9 @@ import {
   TestCaseGenerateResponse,
   DiscoveryReport,
   StepAction,
+  DevServerInfo,
+  SourceScanResult,
+  AutonomousAuditResponse,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -50,7 +53,7 @@ export const api = {
   // Projects
   getProjects: (q?: string) => request<Project[]>(`/api/v1/projects${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   getProject: (id: string) => request<Project>(`/api/v1/projects/${id}`),
-  createProject: (data: { name: string; base_url: string; description?: string }) => 
+  createProject: (data: { name: string; base_url: string; description?: string; source_code_path?: string; allow_local_loopback?: boolean }) => 
     request<Project>("/api/v1/projects", { method: "POST", body: JSON.stringify(data) }),
   updateProject: (id: string, data: Partial<Project>) => 
     request<Project>(`/api/v1/projects/${id}`, { method: "PUT", body: JSON.stringify(data) }),
@@ -66,6 +69,31 @@ export const api = {
     request<TestCase>(`/api/v1/projects/${projectId}/discover/save-test`, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  setSourceDirectory: (projectId: string, directoryPath: string) =>
+    request<any>(`/api/v1/projects/${projectId}/source-directory`, {
+      method: "POST",
+      body: JSON.stringify({ directory_path: directoryPath }),
+    }),
+  scanSource: (projectId: string) =>
+    request<SourceScanResult>(`/api/v1/projects/${projectId}/scan-source`, {
+      method: "POST",
+    }),
+  startDevServer: (projectId: string, data?: { command?: string; port?: number; timeout_seconds?: number }) =>
+    request<DevServerInfo>(`/api/v1/projects/${projectId}/dev-server/start`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    }),
+  stopDevServer: (projectId: string) =>
+    request<{ project_id: string; stopped: boolean }>(`/api/v1/projects/${projectId}/dev-server/stop`, {
+      method: "POST",
+    }),
+  getDevServerStatus: (projectId: string) =>
+    request<DevServerInfo>(`/api/v1/projects/${projectId}/dev-server/status`),
+  runAutonomousAudit: (projectId: string, data?: { auto_start_server?: boolean; max_pages?: number; run_form_tests?: boolean }) =>
+    request<AutonomousAuditResponse>(`/api/v1/projects/${projectId}/autonomous-audit`, {
+      method: "POST",
+      body: JSON.stringify(data || {}),
     }),
 
   // Test Cases

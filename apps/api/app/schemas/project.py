@@ -215,3 +215,30 @@ class DevServerStartRequest(BaseModel):
     command: Optional[str] = Field(default=None, max_length=500, description="Custom start command e.g. npm run dev")
     port: Optional[int] = Field(default=None, ge=1024, le=65535, description="Expected server port")
     timeout_seconds: int = Field(default=45, ge=5, le=180)
+
+
+class AutonomousAuditRequest(BaseModel):
+    auto_start_server: bool = Field(default=True, description="Whether to start local dev server if not running")
+    max_pages: int = Field(default=15, ge=1, le=30, description="Max pages to crawl and inspect")
+    run_form_tests: bool = Field(default=True, description="Whether to generate and execute UI form tests")
+
+
+class AutonomousAuditResponse(BaseModel):
+    project_id: str
+    base_url: str
+    status: str
+    frameworks: List[str] = Field(default_factory=list)
+    source_code_path: Optional[str] = None
+    dev_server_running: bool = False
+    dev_server_url: Optional[str] = None
+    static_routes_count: int = 0
+    pages_audited_count: int = 0
+    broken_links_count: int = 0
+    forms_detected_count: int = 0
+    console_errors_count: int = 0
+    tests_executed_count: int = 0
+    tests_passed_count: int = 0
+    tests_failed_count: int = 0
+    test_runs: List[Dict[str, Any]] = Field(default_factory=list)
+    discovery_report_id: Optional[str] = None
+    audit_summary: str = ""

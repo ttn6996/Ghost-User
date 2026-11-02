@@ -38,6 +38,9 @@ export interface Project {
   name: string;
   base_url: string;
   description?: string;
+  source_code_path?: string;
+  allow_local_loopback?: boolean;
+  execution_mode?: string;
   created_at: string;
   updated_at: string;
 }
@@ -171,4 +174,61 @@ export interface OverviewStats {
     error_summary?: string;
     created_at: string;
   }[];
+}
+
+
+export interface DevServerInfo {
+  project_id: string;
+  local_path: string;
+  command: string;
+  pid?: number;
+  target_url?: string;
+  port?: number;
+  is_running: boolean;
+  start_time?: number;
+  last_log?: string;
+}
+
+export interface DiscoveredRoute {
+  path: string;
+  file_path: string;
+  type: string;
+}
+
+export interface SourceScanResult {
+  project_id: string;
+  source_path: string;
+  detected_frameworks: string[];
+  routes: DiscoveredRoute[];
+  forms: DiscoveredForm[];
+  start_command?: string;
+  package_manager?: string;
+}
+
+export interface AutonomousAuditResponse {
+  project_id: string;
+  base_url: string;
+  status: string;
+  frameworks: string[];
+  source_code_path?: string;
+  dev_server_running: boolean;
+  dev_server_url?: string;
+  static_routes_count: number;
+  pages_audited_count: number;
+  broken_links_count: number;
+  forms_detected_count: number;
+  console_errors_count: number;
+  tests_executed_count: number;
+  tests_passed_count: number;
+  tests_failed_count: number;
+  test_runs: {
+    id: string;
+    test_case_id: string;
+    name: string;
+    status: RunStatus;
+    duration_ms?: number;
+    error_summary?: string;
+  }[];
+  discovery_report_id?: string;
+  audit_summary: string;
 }

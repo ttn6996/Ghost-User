@@ -20,6 +20,7 @@ from apps.worker.runner.security import (
     resolve_target_url,
 )
 from packages.shared.schemas import TestDefinition
+from packages.shared.data_generator import SyntheticDataGenerator
 
 logger = logging.getLogger("ghost-user")
 
@@ -33,11 +34,13 @@ class WebCrawler:
         max_pages: int = 15,
         max_depth: int = 2,
         allow_local: Optional[bool] = None,
+        seed_paths: Optional[List[str]] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.max_pages = min(max(max_pages, 1), 30)
         self.max_depth = min(max(max_depth, 1), 3)
         self.allow_local = get_effective_allow_local(allow_local)
+        self.seed_paths = [p for p in (seed_paths or []) if p]
 
         parsed_base = urlparse(self.base_url)
         self.base_origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
@@ -53,6 +56,11 @@ class WebCrawler:
 
         visited_urls: Set[str] = set()
         queue: List[Tuple[str, int]] = [(self.base_url, 0)]
+        for sp in self.seed_paths:
+            clean_sp = sp if sp.startswith("/") else f"/{sp}"
+            full_seed = urljoin(self.base_url + "/", clean_sp.lstrip("/"))
+            if not any(item[0] == full_seed for item in queue):
+                queue.append((full_seed, 0))
         crawled_pages: List[Dict[str, Any]] = []
         broken_links: List[Dict[str, Any]] = []
         forms_detected: List[Dict[str, Any]] = []
@@ -313,10 +321,11 @@ class WebCrawler:
                 u_sel = f"#{u_input['id']}" if u_input and u_input.get("id") else (f"input[name='{u_input['name']}']" if u_input and u_input.get("name") else "#username, input[type='text']")
                 p_sel = f"#{p_input['id']}" if p_input and p_input.get("id") else (f"input[name='{p_input['name']}']" if p_input and p_input.get("name") else "#password, input[type='password']")
 
+                data_gen = SyntheticDataGenerator(run_id="audit")
                 steps = [
                     {"action": "goto", "url": fpath},
-                    {"action": "fill", "selector": u_sel, "value": "user01"},
-                    {"action": "fill", "selector": p_sel, "value": "admin123"},
+                    {"action": "fill", "selector": u_sel, "value": data_gen.username()},
+                    {"action": "fill", "selector": p_sel, "value": data_gen.password()},
                     {"action": "click", "selector": "button[type='submit'], button:has-text('Đăng nhập'), button:has-text('Login')"},
                     {"action": "screenshot", "name": "discovered_login_result"},
                 ]

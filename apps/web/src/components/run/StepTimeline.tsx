@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { TestStepResult } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { api } from "@/lib/api";
-import { Camera, Clock, AlertTriangle, Maximize2, X } from "lucide-react";
+import { Camera, Clock, AlertTriangle, Maximize2, X, Sparkles } from "lucide-react";
 
 interface StepTimelineProps {
   steps: TestStepResult[];
@@ -78,6 +78,12 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
                       {step.action}
                     </span>
                     <StatusBadge status={step.status} size="sm" />
+                    {step.error_message?.includes("[SELF_HEALED]") && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-500/40 text-[10px] font-mono">
+                        <Sparkles className="h-3 w-3 text-purple-400" />
+                        <span>Self-Healed</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-400">
@@ -86,12 +92,19 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
                   </div>
                 </div>
 
-                {/* Error diagnostics */}
+                {/* Diagnostics / Self-Healing info */}
                 {step.error_message && (
-                  <div className="mt-3 rounded-lg border border-rose-900/40 bg-rose-950/30 p-3 text-xs font-mono text-rose-300 flex items-start gap-2.5">
-                    <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-                    <div className="overflow-x-auto whitespace-pre-wrap">{step.error_message}</div>
-                  </div>
+                  step.error_message.includes("[SELF_HEALED]") ? (
+                    <div className="mt-3 rounded-lg border border-purple-900/40 bg-purple-950/30 p-3 text-xs font-mono text-purple-300 flex items-start gap-2.5">
+                      <Sparkles className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
+                      <div className="overflow-x-auto whitespace-pre-wrap">{step.error_message}</div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-lg border border-rose-900/40 bg-rose-950/30 p-3 text-xs font-mono text-rose-300 flex items-start gap-2.5">
+                      <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                      <div className="overflow-x-auto whitespace-pre-wrap">{step.error_message}</div>
+                    </div>
+                  )
                 )}
 
                 {/* Evidence screenshot */}

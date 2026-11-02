@@ -29,6 +29,7 @@ export default function ProjectsPage() {
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [sourceCodePath, setSourceCodePath] = useState("");
 
   const loadProjects = async (query = "") => {
     try {
@@ -56,15 +57,19 @@ export default function ProjectsPage() {
     setFormError(null);
     try {
       setSubmitting(true);
+      const isLocal = baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1") || Boolean(sourceCodePath);
       await api.createProject({
         name,
         base_url: baseUrl,
         description: description || undefined,
+        source_code_path: sourceCodePath || undefined,
+        allow_local_loopback: isLocal,
       });
       setModalOpen(false);
       setName("");
       setBaseUrl("");
       setDescription("");
+      setSourceCodePath("");
       await loadProjects();
     } catch (err: any) {
       setFormError(err.message || "Failed to create project");
@@ -240,6 +245,22 @@ export default function ProjectsPage() {
             />
             <p className="mt-1 text-[11px] text-zinc-400">
               Only journeys operating within this domain will be executed.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-zinc-300 mb-1">
+              Local Source Directory Path (Optional)
+            </label>
+            <input
+              type="text"
+              value={sourceCodePath}
+              onChange={(e) => setSourceCodePath(e.target.value)}
+              placeholder="e.g. D:\\code\\my-app or /home/user/project"
+              className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none font-mono"
+            />
+            <p className="mt-1 text-[11px] text-zinc-400">
+              Enables automatic AST route inspection, background dev server launch (Mode B), and UI test synthesis.
             </p>
           </div>
 

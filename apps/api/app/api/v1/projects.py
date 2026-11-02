@@ -23,7 +23,8 @@ from app.schemas.project import (
     DiscoveryReportResponse,
     DiscoverySaveTestRequest,
 )
-from app.schemas.project import DevServerStartRequest
+from app.schemas.project import DevServerStartRequest, AutonomousAuditRequest, AutonomousAuditResponse
+from app.services.autonomous_audit import AutonomousAuditService
 from app.services.source_parser import SourceCodeParser, SourceScanResult
 from app.services.dev_server import DevServerRunner, DevServerInfo
 from app.schemas.test_case import TestCaseResponse
@@ -590,3 +591,32 @@ def get_project_dev_server_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     return DevServerRunner.get_status(project.id)
+
+
+@router.post("/{project_id}/autonomous-audit", response_model=AutonomousAuditResponse)
+def run_project_autonomous_audit(
+    project_id: str,
+    payload: Optional[AutonomousAuditRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """End-to-End Autonomous UI & Source Code Audit.
+    
+    1. Parses local AST & source routes.
+    2. Auto-starts background dev server (Mode B) if not running.
+    3. Crawls live web UI seeded by source routes.
+    4. Auto-generates & executes resilient UI tests with tagged test data.
+    5. Cleans up test data and returns full audit report.
+    """
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    audit_req = payload or AutonomousAuditRequest()
+    service = AutonomousAuditService(db)
+    try:
+        return service.execute_audit(project=project, request=audit_req)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Autonomous UI Audit failed: {e}"
+        )

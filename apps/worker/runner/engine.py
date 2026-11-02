@@ -17,6 +17,7 @@ from apps.worker.runner.actions import (
     StepExecutionError,
 )
 from apps.worker.runner.artifacts import ArtifactManager
+from apps.worker.runner.cleanup import DataCleanupExecutor
 from apps.worker.runner.security import check_browser_request_security, SecurityValidationError
 from apps.worker.runner.masking import (
     extract_all_run_secrets,
@@ -329,6 +330,23 @@ class BrowserExecutionEngine:
                     browser.close()
             except Exception:
                 pass
+
+        # Automated synthetic data teardown / database protection (Pillar 4)
+        try:
+            cleanup_executor = DataCleanupExecutor(run_id=run.id, allow_local=allow_local)
+            cleanup_report = cleanup_executor.execute_teardown(
+                base_url=project.base_url,
+                definition=definition,
+            )
+            for msg in cleanup_report.log_messages:
+                console_logs.append({
+                    "type": "info",
+                    "text": msg,
+                    "location": None,
+                    "timestamp": utc_now().isoformat(),
+                })
+        except Exception as clean_err:
+            logger.warning(f"Data cleanup notice for run {run.id}: {clean_err}")
 
         # Update final run record with masked secrets
         finished_time = utc_now()

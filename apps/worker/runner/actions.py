@@ -36,6 +36,16 @@ class StepExecutionError(Exception):
     pass
 
 
+
+def _notify_healing_if_any(page: Page, step_index: int, action_type: str, selector: str, is_healed: bool, strategy: Optional[str]) -> None:
+    if is_healed and strategy:
+        msg = f"[SELF_HEALED] Step {step_index} ({action_type}): Primary selector '{selector}' failed, recovered via '{strategy}'"
+        logger.info(msg)
+        try:
+            page.evaluate("([m]) => console.warn(m)", [msg])
+        except Exception:
+            pass
+
 def execute_action(
     action: TestAction,
     page: Page,
@@ -67,6 +77,7 @@ def execute_action(
             locator, is_healed, strategy = resolve_self_healing_locator(
                 page, action.selector, action_type="click", timeout_ms=timeout
             )
+            _notify_healing_if_any(page, step_index, "click", action.selector, is_healed, strategy)
             locator.wait_for(state="visible", timeout=timeout)
             locator.click(timeout=timeout)
             wait_for_page_readiness(page)
@@ -76,6 +87,7 @@ def execute_action(
             locator, is_healed, strategy = resolve_self_healing_locator(
                 page, action.selector, action_type="fill", target_value=action.value, timeout_ms=timeout
             )
+            _notify_healing_if_any(page, step_index, "fill", action.selector, is_healed, strategy)
             locator.wait_for(state="visible", timeout=timeout)
             locator.fill(action.value, timeout=timeout)
             return None
@@ -84,6 +96,7 @@ def execute_action(
             locator, is_healed, strategy = resolve_self_healing_locator(
                 page, action.selector, action_type="select_option", target_value=action.value, timeout_ms=timeout
             )
+            _notify_healing_if_any(page, step_index, "select_option", action.selector, is_healed, strategy)
             locator.wait_for(state="visible", timeout=timeout)
             locator.select_option(value=action.value, timeout=timeout)
             return None
@@ -116,6 +129,7 @@ def execute_action(
                 locator, is_healed, strategy = resolve_self_healing_locator(
                     page, action.selector, action_type="assert_visible", timeout_ms=timeout
                 )
+                _notify_healing_if_any(page, step_index, "assert_visible", action.selector, is_healed, strategy)
                 locator.wait_for(state="visible", timeout=timeout)
             except PlaywrightTimeoutError:
                 raise StepAssertionFailure(f"Assertion failed: Element '{action.selector}' was not visible after {timeout}ms.")

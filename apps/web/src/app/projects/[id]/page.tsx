@@ -4,7 +4,15 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Project, TestCase, DiscoveryReport, StepAction } from "@/lib/types";
+import { 
+  Project, 
+  TestCase, 
+  DiscoveryReport, 
+  StepAction,
+  DevServerInfo,
+  SourceScanResult,
+  AutonomousAuditResponse
+} from "@/lib/types";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { 
   FolderKanban, 
@@ -24,6 +32,17 @@ import {
   Layers,
   Bug,
   RefreshCw,
+  Terminal,
+  Code,
+  Server,
+  PlaySquare,
+  Square,
+  Shield,
+  Check,
+  Loader2,
+  AlertTriangle,
+  ArrowRight,
+  FolderGit2
 } from "lucide-react";
 
 export default function ProjectDetailPage() {
@@ -37,8 +56,8 @@ export default function ProjectDetailPage() {
   const [runningTestId, setRunningTestId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Tabs
-  const [activeTab, setActiveTab] = useState<"tests" | "discovery">("tests");
+  // Tabs: 'tests' | 'source' | 'discovery'
+  const [activeTab, setActiveTab] = useState<"tests" | "source" | "discovery">("tests");
 
   // Discovery state
   const [discoveryReport, setDiscoveryReport] = useState<DiscoveryReport | null>(null);
@@ -47,19 +66,47 @@ export default function ProjectDetailPage() {
   const [savingTestIdx, setSavingTestIdx] = useState<number | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
+  // Local Source & Dev Server state
+  const [sourcePathInput, setSourcePathInput] = useState("");
+  const [savingPath, setSavingPath] = useState(false);
+  const [savePathMsg, setSavePathMsg] = useState<string | null>(null);
+  const [scanningSource, setScanningSource] = useState(false);
+  const [scanResult, setScanResult] = useState<SourceScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  // Mode B Dev Server state
+  const [devServer, setDevServer] = useState<DevServerInfo | null>(null);
+  const [startingServer, setStartingServer] = useState(false);
+  const [stoppingServer, setStoppingServer] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [customCommand, setCustomCommand] = useState("");
+  const [customPort, setCustomPort] = useState("");
+
+  // Autonomous Audit state
+  const [auditing, setAuditing] = useState(false);
+  const [auditResult, setAuditResult] = useState<AutonomousAuditResponse | null>(null);
+  const [auditError, setAuditError] = useState<string | null>(null);
+
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [projData, tcData, latestDiscovery] = await Promise.all([
+      const [projData, tcData, latestDiscovery, serverStatus] = await Promise.all([
         api.getProject(projectId),
         api.getTestCases(projectId),
         api.getLatestDiscovery(projectId).catch(() => null),
+        api.getDevServerStatus(projectId).catch(() => null),
       ]);
       setProject(projData);
       setTestCases(tcData);
+      if (projData.source_code_path) {
+        setSourcePathInput(projData.source_code_path);
+      }
       if (latestDiscovery) {
         setDiscoveryReport(latestDiscovery);
+      }
+      if (serverStatus) {
+        setDevServer(serverStatus);
       }
     } catch (err: any) {
       setError(err.message || "Failed to load project details");
@@ -118,11 +165,106 @@ export default function ProjectDetailPage() {
       setSaveSuccessMsg(null);
       const created = await api.saveDiscoveredTest(projectId, suggestedTest);
       setTestCases((prev) => [created, ...prev]);
-      setSaveSuccessMsg(`Đã thêm thành công kịch bản "${created.name}" vào dự án! Bạn có thể chuyển sang tab Test Cases để chạy ngay.`);
+      setSaveSuccessMsg(`Đã thêm thành công kịch bản "${created.name}" vào dự án!`);
     } catch (err: any) {
       alert(`Không thể lưu kịch bản: ${err.message}`);
     } finally {
       setSavingTestIdx(null);
+    }
+  };
+
+  const handleSaveSourcePath = async () => {
+    if (!sourcePathInput.trim()) return;
+    try {
+      setSavingPath(true);
+      setSavePathMsg(null);
+      setScanError(null);
+      await api.setSourceDirectory(projectId, sourcePathInput.trim());
+      setSavePathMsg("Đã liên kết thành công thư mục source code!");
+      const updatedProj = await api.getProject(projectId);
+      setProject(updatedProj);
+    } catch (err: any) {
+      setScanError(err.message || "Không thể cấu hình thư mục source code");
+    } finally {
+      setSavingPath(false);
+    }
+  };
+
+  const handleScanSource = async () => {
+    try {
+      setScanningSource(true);
+      setScanError(null);
+      const res = await api.scanSource(projectId);
+      setScanResult(res);
+      if (res.start_command && !customCommand) {
+        setCustomCommand(res.start_command);
+      }
+    } catch (err: any) {
+      setScanError(err.message || "Không thể phân tích source code");
+    } finally {
+      setScanningSource(false);
+    }
+  };
+
+  const handleStartDevServer = async () => {
+    try {
+      setStartingServer(true);
+      setServerError(null);
+      const info = await api.startDevServer(projectId, {
+        command: customCommand || undefined,
+        port: customPort ? parseInt(customPort, 10) : undefined,
+      });
+      setDevServer(info);
+      if (info.target_url) {
+        const updatedProj = await api.getProject(projectId);
+        setProject(updatedProj);
+      }
+    } catch (err: any) {
+      setServerError(err.message || "Không thể khởi động dev server");
+    } finally {
+      setStartingServer(false);
+    }
+  };
+
+  const handleStopDevServer = async () => {
+    try {
+      setStoppingServer(true);
+      await api.stopDevServer(projectId);
+      const status = await api.getDevServerStatus(projectId);
+      setDevServer(status);
+    } catch (err: any) {
+      alert(`Không thể dừng dev server: ${err.message}`);
+    } finally {
+      setStoppingServer(false);
+    }
+  };
+
+  const handleRunAutonomousAudit = async () => {
+    try {
+      setAuditing(true);
+      setAuditError(null);
+      setAuditResult(null);
+      const res = await api.runAutonomousAudit(projectId, {
+        auto_start_server: true,
+        max_pages: 15,
+        run_form_tests: true,
+      });
+      setAuditResult(res);
+      // Reload project test cases & discovery report
+      const [updatedProj, tcData, latestDiscovery, serverStatus] = await Promise.all([
+        api.getProject(projectId),
+        api.getTestCases(projectId),
+        api.getLatestDiscovery(projectId).catch(() => null),
+        api.getDevServerStatus(projectId).catch(() => null),
+      ]);
+      setProject(updatedProj);
+      setTestCases(tcData);
+      if (latestDiscovery) setDiscoveryReport(latestDiscovery);
+      if (serverStatus) setDevServer(serverStatus);
+    } catch (err: any) {
+      setAuditError(err.message || "Quá trình Autonomous UI Audit thất bại.");
+    } finally {
+      setAuditing(false);
     }
   };
 
@@ -164,44 +306,65 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Project Header Card */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-4">
+      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">{project.name}</h1>
-            <div className="mt-2 flex items-center gap-2 text-xs font-mono text-purple-400">
-              <Globe className="h-4 w-4" />
-              <a
-                href={project.base_url}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:underline flex items-center gap-1"
-              >
-                <span>{project.base_url}</span>
-                <ExternalLink className="h-3 w-3 text-zinc-500" />
-              </a>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-100">{project.name}</h1>
+              {devServer?.is_running && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 font-mono text-[11px]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Dev Server Online</span>
+                </span>
+              )}
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-mono">
+              <div className="flex items-center gap-1.5 text-purple-400">
+                <Globe className="h-4 w-4" />
+                <a
+                  href={project.base_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline flex items-center gap-1"
+                >
+                  <span>{project.base_url}</span>
+                  <ExternalLink className="h-3 w-3 text-zinc-500" />
+                </a>
+              </div>
+
+              {project.source_code_path && (
+                <div className="flex items-center gap-1.5 text-zinc-400 border-l border-zinc-800 pl-4">
+                  <FolderGit2 className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="truncate max-w-sm text-zinc-300">{project.source_code_path}</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => {
-                setActiveTab("discovery");
-                if (!discoveryReport && !crawling) {
-                  handleStartDiscovery();
-                }
+                setActiveTab("source");
+                handleRunAutonomousAudit();
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-purple-300 border border-purple-500/30 transition-colors shadow-sm"
+              disabled={auditing}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-md transition disabled:opacity-50"
             >
-              <Compass className="h-4 w-4 text-purple-400" />
-              <span>Khám phá tự động (Crawl)</span>
+              {auditing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 text-purple-200" />
+              )}
+              <span>{auditing ? "Đang Audit..." : "Chạy Autonomous UI Audit"}</span>
             </button>
 
             <Link
               href={`/tests/new?project_id=${project.id}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700/60 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" />
-              <span>Create Test Case</span>
+              <span>Create Test</span>
             </Link>
           </div>
         </div>
@@ -210,12 +373,15 @@ export default function ProjectDetailPage() {
           <p className="text-xs text-zinc-400 max-w-2xl">{project.description}</p>
         )}
 
-        <div className="pt-4 border-t border-zinc-800/80 flex items-center gap-6 text-xs font-mono text-zinc-400">
+        <div className="pt-4 border-t border-zinc-800/80 flex flex-wrap items-center gap-6 text-xs font-mono text-zinc-400">
           <div>
             Total Tests: <span className="text-zinc-200 font-semibold">{testCases.length}</span>
           </div>
           <div>
             Discovered Pages: <span className="text-zinc-200 font-semibold">{discoveryReport?.pages_count ?? 0}</span>
+          </div>
+          <div>
+            Loopback Target: <span className={project.allow_local_loopback ? "text-emerald-400 font-semibold" : "text-zinc-400"}>{project.allow_local_loopback ? "Permitted" : "Strict SSRF Guard"}</span>
           </div>
           <div>
             Created: <span className="text-zinc-300">{new Date(project.created_at).toLocaleDateString()}</span>
@@ -235,6 +401,28 @@ export default function ProjectDetailPage() {
         >
           <PlayCircle className="h-4 w-4" />
           <span>Test Cases ({testCases.length})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab("source");
+            if (!scanResult && project.source_code_path) {
+              handleScanSource();
+            }
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-medium transition ${
+            activeTab === "source"
+              ? "bg-purple-600/20 text-purple-300 border border-purple-500/40"
+              : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
+          }`}
+        >
+          <Code className="h-4 w-4" />
+          <span>Local Source & Dev Server</span>
+          {project.source_code_path && (
+            <span className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-[10px] text-blue-300 border border-blue-500/30">
+              Linked
+            </span>
+          )}
         </button>
 
         <button
@@ -330,7 +518,7 @@ export default function ProjectDetailPage() {
             <EmptyState
               icon={PlayCircle}
               title="Chưa có kịch bản kiểm thử nào"
-              description="Bạn có thể tạo kịch bản mới hoặc sử dụng tính năng Auto-Discovery để hệ thống tự động quét và sinh kịch bản."
+              description="Bạn có thể mở tab Local Source để chạy Autonomous Audit hoặc tạo kịch bản mới."
               actionLabel="Tạo Test Case mới"
               onAction={() => router.push(`/tests/new?project_id=${project.id}`)}
             />
@@ -338,7 +526,306 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      {/* TAB 2: Auto-Discovery & Crawler */}
+      {/* TAB 2: Local Source & Dev Server */}
+      {activeTab === "source" && (
+        <div className="space-y-6">
+          {/* Autonomous Audit Hero Banner */}
+          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-950/30 via-[#0f0f12] to-indigo-950/20 p-6 space-y-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  <h3 className="text-base font-semibold text-zinc-100">
+                    Autonomous UI & Source Code Audit
+                  </h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                    Mode B Autonomous
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
+                  Tự động quét cấu trúc AST source code, khởi động background dev server, &quot;bò&quot; crawl toàn bộ giao diện bằng Playwright, tự động sinh test form với dữ liệu mẫu tagged (<code className="text-purple-300 font-mono">AUTOQA_...</code>) và tự động dọn dẹp cơ sở dữ liệu sau kiểm thử.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRunAutonomousAudit}
+                disabled={auditing}
+                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50 shadow-md shrink-0"
+              >
+                {auditing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-purple-200" />
+                )}
+                <span>{auditing ? "Đang chạy Autonomous Audit..." : "Bắt đầu Audit Toàn Diện"}</span>
+              </button>
+            </div>
+
+            {auditing && (
+              <div className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-4 text-xs font-mono text-purple-200 flex items-center gap-3 animate-pulse">
+                <Loader2 className="h-5 w-5 animate-spin text-purple-400 shrink-0" />
+                <div>
+                  <div className="font-semibold">Đang thực thi quy trình Autonomous UI Audit...</div>
+                  <div className="text-[11px] text-purple-300/80 mt-0.5">
+                    1. AST Source scan &rarr; 2. Dev server launch &rarr; 3. Seeded Playwright crawl &rarr; 4. Form tests execution &rarr; 5. Tagged data teardown.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {auditError && (
+              <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-3 text-xs font-mono text-rose-300 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                <span>{auditError}</span>
+              </div>
+            )}
+
+            {auditResult && (
+              <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-4 space-y-3 font-mono text-xs">
+                <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{auditResult.audit_summary}</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-zinc-300 pt-2 border-t border-emerald-900/40 text-[11px]">
+                  <div>
+                    <span className="text-zinc-500">Framework:</span>{" "}
+                    <span className="text-zinc-200 font-semibold">{auditResult.frameworks.join(", ") || "Generic Web"}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Pages Audited:</span>{" "}
+                    <span className="text-zinc-200 font-semibold">{auditResult.pages_audited_count}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Forms Tested:</span>{" "}
+                    <span className="text-zinc-200 font-semibold">{auditResult.forms_detected_count}</span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">Tests Passed:</span>{" "}
+                    <span className="text-emerald-400 font-semibold">{auditResult.tests_passed_count} / {auditResult.tests_executed_count}</span>
+                  </div>
+                </div>
+
+                {auditResult.test_runs.length > 0 && (
+                  <div className="pt-2 border-t border-emerald-900/40 space-y-1.5">
+                    <div className="text-[11px] text-zinc-400 font-semibold">Kịch bản đã tự động sinh & chạy:</div>
+                    {auditResult.test_runs.map((r) => (
+                      <div key={r.id} className="flex items-center justify-between p-2 rounded bg-zinc-900/60 border border-zinc-800 text-[11px]">
+                        <span className="text-zinc-200">{r.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                            r.status === "passed" ? "bg-emerald-950/60 text-emerald-400" : "bg-rose-950/60 text-rose-400"
+                          }`}>
+                            {r.status}
+                          </span>
+                          <Link href={`/runs/${r.id}`} className="text-purple-400 hover:underline flex items-center gap-0.5">
+                            <span>Chi tiết</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 2-Column Grid: Source Path & Dev Server */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Card 1: Local Source Path & AST Inspector */}
+            <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                  <FolderGit2 className="h-4 w-4 text-blue-400" />
+                  <span>Local Source Code Directory</span>
+                </h3>
+                <span className="text-[10px] font-mono text-zinc-500">AST Static Analysis</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-mono text-zinc-400">
+                  Thư mục mã nguồn cục bộ (Local Directory Path):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={sourcePathInput}
+                    onChange={(e) => setSourcePathInput(e.target.value)}
+                    placeholder="e.g. D:\code\my-app or /home/user/app"
+                    className="flex-1 rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSaveSourcePath}
+                    disabled={savingPath || !sourcePathInput}
+                    className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-zinc-200 border border-zinc-700/60 transition disabled:opacity-50 shrink-0"
+                  >
+                    {savingPath ? "Saving..." : "Lưu"}
+                  </button>
+                </div>
+              </div>
+
+              {savePathMsg && (
+                <div className="rounded-lg border border-emerald-900/60 bg-emerald-950/20 p-2.5 text-xs font-mono text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                  <span>{savePathMsg}</span>
+                </div>
+              )}
+
+              {scanError && (
+                <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-2.5 text-xs font-mono text-rose-300 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                  <span>{scanError}</span>
+                </div>
+              )}
+
+              <div className="pt-2 flex items-center justify-between border-t border-zinc-800">
+                <button
+                  onClick={handleScanSource}
+                  disabled={scanningSource || !project.source_code_path}
+                  className="px-3.5 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+                >
+                  <Code className={`h-3.5 w-3.5 ${scanningSource ? "animate-spin" : ""}`} />
+                  <span>{scanningSource ? "Đang phân tích AST..." : "Quét Mã Nguồn (AST Scan)"}</span>
+                </button>
+
+                {scanResult && (
+                  <span className="text-[11px] font-mono text-zinc-400">
+                    Phát hiện: <strong className="text-zinc-200">{scanResult.routes.length}</strong> routes, <strong className="text-zinc-200">{scanResult.forms.length}</strong> forms
+                  </span>
+                )}
+              </div>
+
+              {/* Scanned Details */}
+              {scanResult && (
+                <div className="space-y-3 pt-3 border-t border-zinc-800">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                    <span className="text-zinc-400">Frameworks:</span>
+                    {scanResult.detected_frameworks.map((fw) => (
+                      <span key={fw} className="px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[10px]">
+                        {fw}
+                      </span>
+                    ))}
+                    {scanResult.start_command && (
+                      <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px]">
+                        Cmd: {scanResult.start_command}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Discovered routes list */}
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-mono text-zinc-400 font-semibold">Routes đã phát hiện:</div>
+                    <div className="max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]">
+                      {scanResult.routes.map((r, i) => (
+                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[#0a0a0c] border border-zinc-800/80">
+                          <span className="text-zinc-200">{r.path}</span>
+                          <span className="text-[10px] text-zinc-500">{r.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Card 2: Mode B Autonomous Dev Server Controller */}
+            <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                  <Server className="h-4 w-4 text-purple-400" />
+                  <span>Mode B: Dev Server Manager</span>
+                </h3>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[10px] ${
+                  devServer?.is_running
+                    ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/60"
+                    : "bg-zinc-800 text-zinc-400"
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${devServer?.is_running ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"}`}></span>
+                  <span>{devServer?.is_running ? "Đang chạy" : "Đã dừng"}</span>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Start Command:</label>
+                  <input
+                    type="text"
+                    value={customCommand}
+                    onChange={(e) => setCustomCommand(e.target.value)}
+                    placeholder="e.g. npm run dev"
+                    className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-zinc-400 mb-1">Target Port (Optional):</label>
+                  <input
+                    type="text"
+                    value={customPort}
+                    onChange={(e) => setCustomPort(e.target.value)}
+                    placeholder="e.g. 3000"
+                    className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {serverError && (
+                <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-2.5 text-xs font-mono text-rose-300 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                  <span>{serverError}</span>
+                </div>
+              )}
+
+              {devServer?.is_running && devServer.target_url && (
+                <div className="p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-900/40 text-xs font-mono flex items-center justify-between">
+                  <span className="text-zinc-400">Target URL: <strong className="text-emerald-400">{devServer.target_url}</strong></span>
+                  <span className="text-[10px] text-zinc-500">PID: {devServer.pid} | Port: {devServer.port}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
+                {!devServer?.is_running ? (
+                  <button
+                    onClick={handleStartDevServer}
+                    disabled={startingServer || !project.source_code_path}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-medium transition disabled:opacity-50 shadow-sm"
+                  >
+                    {startingServer ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <PlaySquare className="h-3.5 w-3.5" />
+                    )}
+                    <span>{startingServer ? "Đang khởi động..." : "Start Dev Server"}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleStopDevServer}
+                    disabled={stoppingServer}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-medium transition disabled:opacity-50 shadow-sm"
+                  >
+                    <Square className="h-3.5 w-3.5" />
+                    <span>{stoppingServer ? "Đang dừng..." : "Stop Dev Server"}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Dev Server Log Terminal */}
+              <div className="rounded-lg border border-zinc-800 bg-[#0a0a0c] overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-mono text-zinc-400">
+                  <Terminal className="h-3 w-3 text-purple-400" />
+                  <span>Dev Server Output Terminal</span>
+                </div>
+                <div className="p-2.5 font-mono text-[11px] text-zinc-400 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                  {devServer?.last_log || "Chưa có log từ tiến trình server..."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: Auto-Discovery & Crawler */}
       {activeTab === "discovery" && (
         <div className="space-y-6">
           {/* Action & Trigger Card */}
@@ -398,180 +885,185 @@ export default function ProjectDetailPage() {
           {/* Discovery Metrics & Results */}
           {discoveryReport ? (
             <div className="space-y-6">
-              {/* Metric Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 font-mono">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                    <Layers className="h-3.5 w-3.5 text-purple-400" />
-                    <span>Trang phát hiện</span>
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                    <FileText className="h-5 w-5" />
                   </div>
-                  <div className="text-2xl font-bold text-zinc-100 mt-1">
-                    {discoveryReport.pages_count}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 font-mono">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 text-blue-400" />
-                    <span>Form tương tác</span>
-                  </div>
-                  <div className="text-2xl font-bold text-zinc-100 mt-1">
-                    {discoveryReport.forms_count}
+                  <div>
+                    <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+                      Trang đã khám phá
+                    </div>
+                    <div className="text-xl font-bold font-mono text-zinc-100">
+                      {discoveryReport.pages_count}
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 font-mono">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                    <Bug className="h-3.5 w-3.5 text-rose-400" />
-                    <span>Link hỏng (404/500)</span>
+                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    <Bug className="h-5 w-5" />
                   </div>
-                  <div className="text-2xl font-bold text-zinc-100 mt-1">
-                    {discoveryReport.broken_links_count}
+                  <div>
+                    <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+                      Liên kết chết (404/500)
+                    </div>
+                    <div className="text-xl font-bold font-mono text-rose-400">
+                      {discoveryReport.broken_links_count}
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 font-mono">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>Kịch bản tự tạo</span>
+                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <Layers className="h-5 w-5" />
                   </div>
-                  <div className="text-2xl font-bold text-zinc-100 mt-1">
-                    {discoveryReport.suggested_tests_json?.length || 0}
+                  <div>
+                    <div className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+                      Forms & Tương tác
+                    </div>
+                    <div className="text-xl font-bold font-mono text-emerald-400">
+                      {discoveryReport.forms_count}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Section 1: Auto-Generated Test Cases */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 font-mono">
-                  <Sparkles className="h-4 w-4 text-purple-400" />
-                  <span>Kịch bản kiểm thử tự động tạo sẵn (Auto-Generated Test Cases)</span>
-                </h3>
+              {/* Suggested Test Cases Section */}
+              {discoveryReport.suggested_tests_json && discoveryReport.suggested_tests_json.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-400" />
+                        <span>Kịch bản kiểm thử tự động sinh (AI / Smart Discovery)</span>
+                      </h4>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        Hệ thống đã phân tích cây DOM và sinh ra các kịch bản kiểm thử sẵn sàng chạy. Bạn có thể thêm vào dự án với 1 cú click.
+                      </p>
+                    </div>
+                  </div>
 
-                {discoveryReport.suggested_tests_json && discoveryReport.suggested_tests_json.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {discoveryReport.suggested_tests_json.map((st, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex flex-col justify-between gap-3 hover:border-purple-500/40 transition-colors"
+                        className="rounded-xl border border-zinc-800/80 bg-[#121216] p-4 flex flex-col justify-between gap-4 hover:border-purple-500/40 transition"
                       >
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold text-xs text-zinc-100 font-mono">
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-mono text-sm font-semibold text-zinc-200">
                               {st.name}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            <span className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">
                               {st.steps.length} actions
                             </span>
                           </div>
-                          <p className="text-[11px] text-zinc-400 line-clamp-2">
-                            {st.description || "Tự động tạo dựa trên kết quả quét website."}
-                          </p>
+                          {st.description && (
+                            <p className="text-xs text-zinc-400 leading-relaxed font-sans">
+                              {st.description}
+                            </p>
+                          )}
+
+                          <div className="pt-2">
+                            <div className="text-[11px] font-mono text-zinc-500 mb-1">Chuỗi hành động mô phỏng:</div>
+                            <div className="flex flex-wrap gap-1 font-mono text-[10px]">
+                              {st.steps.slice(0, 5).map((step, sIdx) => (
+                                <span
+                                  key={sIdx}
+                                  className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/50"
+                                >
+                                  {step.action} {step.url || step.selector?.split(",")[0] || ""}
+                                </span>
+                              ))}
+                              {st.steps.length > 5 && (
+                                <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                                  +{st.steps.length - 5} nữa
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono text-zinc-500">
-                            {st.steps.map((s) => s.action).slice(0, 3).join(" ➔ ")}...
-                          </span>
+                        <div className="pt-3 border-t border-zinc-800/80 flex justify-end">
                           <button
                             type="button"
                             disabled={savingTestIdx === idx}
                             onClick={() => handleSaveDiscoveredTest(st, idx)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-mono transition-colors disabled:opacity-50 shrink-0"
+                            className="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-medium flex items-center gap-1.5 transition disabled:opacity-50"
                           >
-                            <Plus className="h-3 w-3" />
-                            <span>{savingTestIdx === idx ? "Đang thêm..." : "+ Thêm vào dự án"}</span>
+                            <Plus className="h-3.5 w-3.5" />
+                            <span>{savingTestIdx === idx ? "Đang thêm..." : "Thêm vào Test Cases"}</span>
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="p-6 text-center text-xs font-mono text-zinc-500 border border-zinc-800 rounded-xl bg-[#0f0f12]">
-                    Chưa có kịch bản nào được sinh. Bấm &quot;Bắt đầu khám phá&quot; để quét website.
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Section 2: Discovered Pages Table */}
+              {/* Pages Crawled Table */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 font-mono">
-                  <Layers className="h-4 w-4 text-zinc-400" />
-                  <span>Sơ đồ các trang web phát hiện (Discovered Pages & Sitemaps)</span>
-                </h3>
+                <h4 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-zinc-400" />
+                  <span>Danh sách các trang đã &quot;bò&quot; và kiểm tra ({discoveryReport.pages_count})</span>
+                </h4>
 
-                {discoveryReport.pages_json && discoveryReport.pages_json.length > 0 ? (
-                  <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-zinc-800 text-zinc-400 font-mono bg-[#141418]">
-                          <th className="py-2.5 px-4 font-medium">Đường dẫn (Path)</th>
-                          <th className="py-2.5 px-4 font-medium">Tiêu đề (Title)</th>
-                          <th className="py-2.5 px-4 font-medium">Trạng thái (HTTP)</th>
-                          <th className="py-2.5 px-4 font-medium">Form</th>
-                          <th className="py-2.5 px-4 font-medium text-right">Liên kết</th>
+                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-zinc-800 text-zinc-400 bg-[#141418]">
+                        <th className="py-2.5 px-4 font-medium">Đường dẫn (Path)</th>
+                        <th className="py-2.5 px-4 font-medium">Tiêu đề (Title)</th>
+                        <th className="py-2.5 px-4 font-medium">HTTP Status</th>
+                        <th className="py-2.5 px-4 font-medium">Forms</th>
+                        <th className="py-2.5 px-4 font-medium">Links</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800">
+                      {(discoveryReport.pages_json || []).map((page, idx) => (
+                        <tr key={idx} className="hover:bg-zinc-800/20">
+                          <td className="py-2.5 px-4 font-semibold text-zinc-300">
+                            {page.path}
+                          </td>
+                          <td className="py-2.5 px-4 text-zinc-400 max-w-xs truncate font-sans">
+                            {page.title}
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                page.status_code >= 200 && page.status_code < 300
+                                  ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/60"
+                                  : "bg-rose-950/60 text-rose-400 border border-rose-800/60"
+                              }`}
+                            >
+                              {page.status_code}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-zinc-400">
+                            {page.forms_count}
+                          </td>
+                          <td className="py-2.5 px-4 text-zinc-400">
+                            {page.links_found}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800 font-mono">
-                        {discoveryReport.pages_json.map((page, idx) => (
-                          <tr key={idx} className="hover:bg-zinc-800/20">
-                            <td className="py-2.5 px-4 font-semibold text-zinc-200">
-                              <a
-                                href={page.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="hover:text-purple-400 hover:underline flex items-center gap-1"
-                              >
-                                <span>{page.path}</span>
-                                <ExternalLink className="h-2.5 w-2.5 text-zinc-500" />
-                              </a>
-                            </td>
-                            <td className="py-2.5 px-4 text-zinc-300 font-sans truncate max-w-xs">
-                              {page.title || "—"}
-                            </td>
-                            <td className="py-2.5 px-4">
-                              <span
-                                className={`inline-flex px-2 py-0.5 rounded text-[10px] ${
-                                  page.status_code >= 200 && page.status_code < 400
-                                    ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/40"
-                                    : "bg-rose-950/40 text-rose-400 border border-rose-800/40"
-                                }`}
-                              >
-                                {page.status_code} {page.status_code === 200 ? "OK" : page.status_code === 404 ? "Not Found" : ""}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-4 text-zinc-400">
-                              {page.forms_count > 0 ? (
-                                <span className="text-purple-300 font-semibold">{page.forms_count} form</span>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className="py-2.5 px-4 text-right text-zinc-400">
-                              {page.links_found} links
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-xs font-mono text-zinc-500 border border-zinc-800 rounded-xl bg-[#0f0f12]">
-                    Chưa có trang nào được phát hiện.
-                  </div>
-                )}
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           ) : (
-            !crawling && (
-              <EmptyState
-                icon={Compass}
-                title="Chưa thực hiện quét tự động"
-                description="Bấm 'Bắt đầu khám phá' để Playwright tự động quét cấu trúc website, nhận diện form và tạo sẵn các test case mẫu."
-                actionLabel="Bắt đầu khám phá (Start Crawl)"
-                onAction={handleStartDiscovery}
-              />
-            )
+            <div className="rounded-xl border border-zinc-800/80 bg-[#0c0c0e] p-8 text-center space-y-3">
+              <Compass className="h-8 w-8 text-zinc-600 mx-auto" />
+              <div className="text-sm font-medium text-zinc-300">
+                Chưa có báo cáo khám phá website
+              </div>
+              <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                Nhấn nút &quot;Bắt đầu khám phá (Start Crawl)&quot; bên trên để hệ thống tự động quét trang web và sinh các kịch bản kiểm thử.
+              </p>
+            </div>
           )}
         </div>
       )}
