@@ -209,3 +209,9 @@ class DiscoverySaveTestRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     steps: List[Dict[str, Any]]
+
+
+class DevServerStartRequest(BaseModel):
+    command: Optional[str] = Field(default=None, max_length=500, description="Custom start command e.g. npm run dev")
+    port: Optional[int] = Field(default=None, ge=1024, le=65535, description="Expected server port")
+    timeout_seconds: int = Field(default=45, ge=5, le=180)

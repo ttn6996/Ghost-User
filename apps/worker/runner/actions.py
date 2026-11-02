@@ -1,4 +1,4 @@
-"""Playwright action executors for browser journey steps."""
+"""Playwright action executors for browser journey steps with Self-Healing Locators."""
 
 import time
 from typing import List, Optional
@@ -20,6 +20,10 @@ from packages.shared.schemas import (
 )
 from apps.worker.runner.security import resolve_target_url, SecurityValidationError
 from apps.worker.runner.artifacts import ArtifactManager
+from apps.worker.runner.resilience import (
+    wait_for_page_readiness,
+    resolve_self_healing_locator,
+)
 
 
 class StepAssertionFailure(Exception):
@@ -41,7 +45,7 @@ def execute_action(
     allow_local: bool = False,
     allowed_domains: Optional[List[str]] = None,
 ) -> Optional[str]:
-    """Executes a single test action. Returns relative screenshot path if a screenshot was taken."""
+    """Executes a single test action with self-healing locator fallbacks and spinner synchronization."""
     timeout = action.timeout_ms or 10000
 
     try:
@@ -52,46 +56,66 @@ def execute_action(
                 allowed_domains=allowed_domains,
                 allow_local=allow_local,
             )
-            page.goto(target_url, timeout=timeout, wait_until="load")
+            page.goto(target_url, timeout=timeout, wait_until="domcontentloaded")
+            wait_for_page_readiness(page)
             return None
 
-        elif isinstance(action, ClickAction):
-            locator = page.locator(action.selector).first
+        # Synchronize before element interactions
+        wait_for_page_readiness(page, timeout_ms=3000)
+
+        if isinstance(action, ClickAction):
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="click", timeout_ms=timeout
+            )
             locator.wait_for(state="visible", timeout=timeout)
             locator.click(timeout=timeout)
+            wait_for_page_readiness(page)
             return None
 
         elif isinstance(action, FillAction):
-            locator = page.locator(action.selector).first
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="fill", target_value=action.value, timeout_ms=timeout
+            )
             locator.wait_for(state="visible", timeout=timeout)
             locator.fill(action.value, timeout=timeout)
             return None
 
         elif isinstance(action, SelectOptionAction):
-            locator = page.locator(action.selector).first
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="select_option", target_value=action.value, timeout_ms=timeout
+            )
             locator.wait_for(state="visible", timeout=timeout)
             locator.select_option(value=action.value, timeout=timeout)
             return None
 
         elif isinstance(action, CheckAction):
-            locator = page.locator(action.selector).first
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="check", timeout_ms=timeout
+            )
             locator.wait_for(state="visible", timeout=timeout)
             locator.check(timeout=timeout)
             return None
 
         elif isinstance(action, UncheckAction):
-            locator = page.locator(action.selector).first
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="uncheck", timeout_ms=timeout
+            )
             locator.wait_for(state="visible", timeout=timeout)
             locator.uncheck(timeout=timeout)
             return None
 
         elif isinstance(action, WaitForVisibleAction):
-            page.locator(action.selector).first.wait_for(state="visible", timeout=timeout)
+            locator, is_healed, strategy = resolve_self_healing_locator(
+                page, action.selector, action_type="wait", timeout_ms=timeout
+            )
+            locator.wait_for(state="visible", timeout=timeout)
             return None
 
         elif isinstance(action, AssertVisibleAction):
             try:
-                locator = page.locator(action.selector).first
+                locator, is_healed, strategy = resolve_self_healing_locator(
+                    page, action.selector, action_type="assert_visible", timeout_ms=timeout
+                )
                 locator.wait_for(state="visible", timeout=timeout)
             except PlaywrightTimeoutError:
                 raise StepAssertionFailure(f"Assertion failed: Element '{action.selector}' was not visible after {timeout}ms.")
@@ -99,7 +123,9 @@ def execute_action(
 
         elif isinstance(action, AssertTextAction):
             try:
-                locator = page.locator(action.selector).first
+                locator, is_healed, strategy = resolve_self_healing_locator(
+                    page, action.selector, action_type="assert_text", timeout_ms=timeout
+                )
                 locator.wait_for(state="visible", timeout=timeout)
                 actual_text = locator.text_content() or ""
                 if action.exact:
@@ -119,11 +145,21 @@ def execute_action(
             return None
 
         elif isinstance(action, AssertUrlAction):
-            current_url = page.url
-            if action.expected_url not in current_url:
-                raise StepAssertionFailure(
-                    f"Assertion failed: Current URL '{current_url}' does not match expected URL '{action.expected_url}'."
-                )
+            expected = action.expected_url
+            actual = page.url
+            if expected.startswith("/"):
+                # Path matching
+                from urllib.parse import urlparse
+                actual_path = urlparse(actual).path
+                if actual_path != expected and not actual_path.endswith(expected):
+                    raise StepAssertionFailure(
+                        f"Assertion failed: URL path mismatch. Expected path '{expected}', current URL '{actual}'."
+                    )
+            else:
+                if actual != expected and not actual.startswith(expected):
+                    raise StepAssertionFailure(
+                        f"Assertion failed: URL mismatch. Expected '{expected}', found '{actual}'."
+                    )
             return None
 
         elif isinstance(action, ScreenshotAction):
@@ -132,13 +168,11 @@ def execute_action(
             return rel_path
 
         else:
-            raise StepExecutionError(f"Unknown or unsupported action type: {type(action)}")
+            raise StepExecutionError(f"Unsupported action type: {action.action}")
 
-    except StepAssertionFailure:
+    except (StepAssertionFailure, SecurityValidationError):
         raise
-    except SecurityValidationError as e:
-        raise StepExecutionError(f"Security validation violation: {e}")
     except PlaywrightTimeoutError as e:
-        raise StepExecutionError(f"Browser action timed out after {timeout}ms on action '{action.action}': {e}")
+        raise StepExecutionError(f"Browser action timeout after {timeout}ms: {e}")
     except Exception as e:
-        raise StepExecutionError(f"Browser execution error during '{action.action}': {e}")
+        raise StepExecutionError(f"Browser action failed: {e}")

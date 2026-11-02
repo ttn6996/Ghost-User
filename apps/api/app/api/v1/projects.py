@@ -23,6 +23,9 @@ from app.schemas.project import (
     DiscoveryReportResponse,
     DiscoverySaveTestRequest,
 )
+from app.schemas.project import DevServerStartRequest
+from app.services.source_parser import SourceCodeParser, SourceScanResult
+from app.services.dev_server import DevServerRunner, DevServerInfo
 from app.schemas.test_case import TestCaseResponse
 from apps.worker.runner.crawler import WebCrawler
 from apps.worker.runner.security import (
@@ -489,3 +492,101 @@ def save_discovered_test(
     db.commit()
     db.refresh(test_case)
     return test_case
+
+
+@router.post("/{project_id}/scan-source", response_model=SourceScanResult)
+def scan_project_source_code(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Parses project local source code to extract routes, forms, and frameworks."""
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    source_path = project.source_code_path
+    if not source_path or not Path(source_path).is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project does not have a valid local source_code_path configured. Set source_directory first."
+        )
+
+    parser = SourceCodeParser(source_path)
+    try:
+        return parser.parse()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse source code: {e}"
+        )
+
+
+@router.post("/{project_id}/dev-server/start", response_model=DevServerInfo)
+def start_project_dev_server(
+    project_id: str,
+    payload: Optional[DevServerStartRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """Mode B: Launches background local dev server and extracts active URL and port."""
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    source_path = project.source_code_path
+    if not source_path or not Path(source_path).is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project does not have a valid local source_code_path configured."
+        )
+
+    cmd = payload.command if payload else None
+    port = payload.port if payload else None
+    timeout = payload.timeout_seconds if payload else 45
+
+    try:
+        server_info = DevServerRunner.start_server(
+            project_id=project.id,
+            local_path=source_path,
+            command=cmd,
+            port=port,
+            timeout_seconds=timeout,
+        )
+        if server_info.target_url:
+            project.base_url = server_info.target_url
+            project.allow_local_loopback = True
+            db.commit()
+            db.refresh(project)
+
+        return server_info
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start dev server: {e}"
+        )
+
+
+@router.post("/{project_id}/dev-server/stop")
+def stop_project_dev_server(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Stops the running dev server for this project."""
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    stopped = DevServerRunner.stop_server(project.id)
+    return {"project_id": project.id, "stopped": stopped}
+
+
+@router.get("/{project_id}/dev-server/status", response_model=DevServerInfo)
+def get_project_dev_server_status(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Checks running status and logs of the dev server."""
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    return DevServerRunner.get_status(project.id)
