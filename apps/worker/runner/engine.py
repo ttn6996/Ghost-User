@@ -18,6 +18,7 @@ from apps.worker.runner.actions import (
 )
 from apps.worker.runner.artifacts import ArtifactManager
 from apps.worker.runner.cleanup import DataCleanupExecutor
+from apps.worker.runner.auth import inject_auth_profile
 from apps.worker.runner.security import check_browser_request_security, SecurityValidationError
 from apps.worker.runner.masking import (
     extract_all_run_secrets,
@@ -177,6 +178,8 @@ class BrowserExecutionEngine:
 
                 page = context.new_page()
                 page.set_default_timeout(settings.ACTION_TIMEOUT_MS)
+                # Pillar 2: Session & Auth profile injection
+                inject_auth_profile(context=context, page=page, base_url=project.base_url, auth_profile=auth_profile_json)
 
                 # Collect console errors and page crashes
                 def on_console(msg):

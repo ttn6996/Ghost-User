@@ -142,3 +142,17 @@ class DiscoveryReport(Base):
     finished_at = Column(DateTime(timezone=True), nullable=True)
 
     project = relationship("Project", backref="discovery_reports")
+
+
+class AISetting(Base):
+    __tablename__ = "ai_settings"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    provider = Column(String(50), nullable=False, default="gemini")
+    base_url = Column(String(1024), nullable=True)
+    api_key = Column(String(1024), nullable=True)
+    model = Column(String(100), nullable=False, default="gemini-1.5-flash")
+    temperature = Column(Integer, default=20)
+    enabled = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)

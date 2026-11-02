@@ -41,6 +41,8 @@ export interface Project {
   source_code_path?: string;
   allow_local_loopback?: boolean;
   execution_mode?: string;
+  auth_profile_json?: any;
+  secrets_json?: any;
   created_at: string;
   updated_at: string;
 }
@@ -231,4 +233,33 @@ export interface AutonomousAuditResponse {
   }[];
   discovery_report_id?: string;
   audit_summary: string;
+  visual_qa_report?: {
+    page_url: string;
+    visual_score_out_of_100: number;
+    has_visual_bugs: boolean;
+    issues: { severity: string; category: string; description: string; suggested_fix: string }[];
+    ux_recommendations: string[];
+  };
+}
+
+
+export interface AISetting {
+  id: string;
+  provider: string; // 'gemini' | 'openai' | 'anthropic' | 'custom_openai'
+  base_url?: string;
+  api_key_masked?: string;
+  model: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AITestConnectionResult {
+  success: boolean;
+  provider: string;
+  base_url: string;
+  model: string;
+  latency_ms: number;
+  reply?: string;
+  error?: string;
 }

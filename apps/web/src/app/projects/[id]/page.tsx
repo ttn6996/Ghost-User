@@ -42,8 +42,13 @@ import {
   Loader2,
   AlertTriangle,
   ArrowRight,
-  FolderGit2
+  FolderGit2,
+  FileDown,
+  Lock,
+  KeyRound,
+  ShieldCheck as ShieldCheckIcon
 } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -82,6 +87,16 @@ export default function ProjectDetailPage() {
   const [customCommand, setCustomCommand] = useState("");
   const [customPort, setCustomPort] = useState("");
 
+  // Session / Auth Profile state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authLoginUrl, setAuthLoginUrl] = useState("/admin/login");
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authSubmitSelector, setAuthSubmitSelector] = useState("button[type='submit']");
+  const [authBearerToken, setAuthBearerToken] = useState("");
+  const [savingAuth, setSavingAuth] = useState(false);
+  const [authSaveSuccess, setAuthSaveSuccess] = useState(false);
+
   // Autonomous Audit state
   const [auditing, setAuditing] = useState(false);
   const [auditResult, setAuditResult] = useState<AutonomousAuditResponse | null>(null);
@@ -101,6 +116,18 @@ export default function ProjectDetailPage() {
       setTestCases(tcData);
       if (projData.source_code_path) {
         setSourcePathInput(projData.source_code_path);
+      }
+      if (projData.auth_profile_json) {
+        const ap = projData.auth_profile_json;
+        if (ap.auto_login) {
+          if (ap.auto_login.login_url) setAuthLoginUrl(ap.auto_login.login_url);
+          if (ap.auto_login.username_value) setAuthUsername(ap.auto_login.username_value);
+          if (ap.auto_login.password_value) setAuthPassword(ap.auto_login.password_value);
+          if (ap.auto_login.submit_selector) setAuthSubmitSelector(ap.auto_login.submit_selector);
+        }
+        if (ap.headers && ap.headers.Authorization) {
+          setAuthBearerToken(ap.headers.Authorization);
+        }
       }
       if (latestDiscovery) {
         setDiscoveryReport(latestDiscovery);
@@ -239,6 +266,35 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleSaveAuthProfile = async () => {
+    try {
+      setSavingAuth(true);
+      setAuthSaveSuccess(false);
+      const authPayload: any = {
+        headers: authBearerToken ? { Authorization: authBearerToken.trim() } : {},
+        auto_login: {
+          enabled: Boolean(authUsername.trim() && authPassword.trim()),
+          login_url: authLoginUrl.trim() || "/admin/login",
+          username_value: authUsername.trim(),
+          password_value: authPassword.trim(),
+          submit_selector: authSubmitSelector.trim() || "button[type='submit']",
+        },
+      };
+      await api.updateProject(projectId, { auth_profile_json: authPayload });
+      const updated = await api.getProject(projectId);
+      setProject(updated);
+      setAuthSaveSuccess(true);
+      setTimeout(() => {
+        setAuthSaveSuccess(false);
+        setAuthModalOpen(false);
+      }, 1500);
+    } catch (err: any) {
+      alert(`Lưu cấu hình Auth thất bại: ${err.message}`);
+    } finally {
+      setSavingAuth(false);
+    }
+  };
+
   const handleRunAutonomousAudit = async () => {
     try {
       setAuditing(true);
@@ -357,6 +413,27 @@ export default function ProjectDetailPage() {
                 <Sparkles className="h-4 w-4 text-purple-200" />
               )}
               <span>{auditing ? "Đang Audit..." : "Chạy Autonomous UI Audit"}</span>
+            </button>
+
+            <a
+              href={api.getExportReportUrl(projectId)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700/60 transition-colors shadow-sm"
+              title="Xuất báo cáo HTML / PDF hoàn chỉnh"
+            >
+              <FileDown className="h-4 w-4 text-purple-400" />
+              <span>Export Report</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setAuthModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700/60 transition-colors shadow-sm"
+              title="Cấu hình tài khoản đăng nhập để vượt qua trang login"
+            >
+              <Lock className="h-4 w-4 text-amber-400" />
+              <span>Session Auth</span>
             </button>
 
             <Link
@@ -606,6 +683,39 @@ export default function ProjectDetailPage() {
                     <span className="text-emerald-400 font-semibold">{auditResult.tests_passed_count} / {auditResult.tests_executed_count}</span>
                   </div>
                 </div>
+
+                {/* Visual QA Multimodal Report */}
+                {auditResult.visual_qa_report && (
+                  <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-950/20 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-purple-400" />
+                        <span className="font-semibold text-purple-200">Multimodal Visual QA Score:</span>
+                        <span className="font-bold text-emerald-400 text-sm">
+                          {auditResult.visual_qa_report.visual_score_out_of_100}/100
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                        AI Vision Analyzed
+                      </span>
+                    </div>
+
+                    {auditResult.visual_qa_report.issues && auditResult.visual_qa_report.issues.length > 0 ? (
+                      <div className="space-y-1 pt-1 font-mono text-[11px]">
+                        {auditResult.visual_qa_report.issues.map((iss: any, i: number) => (
+                          <div key={i} className="p-1.5 rounded bg-zinc-900/60 border border-zinc-800 text-zinc-300">
+                            <span className="text-amber-400 font-semibold mr-1.5">[{iss.category || 'layout'}]</span>
+                            {iss.description}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-zinc-400 font-sans">
+                        Không phát hiện lỗi vỡ layout, tràn chữ hoặc mất cân đối thị giác.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {auditResult.test_runs.length > 0 && (
                   <div className="pt-2 border-t border-emerald-900/40 space-y-1.5">
@@ -1067,6 +1177,111 @@ export default function ProjectDetailPage() {
           )}
         </div>
       )}
+
+      {/* Session / Authentication Profile Modal */}
+      <Modal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        title="Session Authentication & Login Wall Bypass"
+        description="Cấu hình tài khoản đăng nhập hoặc Bearer token để Playwright tự động vượt qua login wall khi audit các trang admin/dashboard."
+      >
+        <div className="space-y-4">
+          <div className="space-y-3 p-3.5 rounded-lg border border-zinc-800 bg-[#0a0a0c]">
+            <div className="text-xs font-semibold text-zinc-200 font-mono flex items-center gap-1.5">
+              <KeyRound className="h-4 w-4 text-amber-400" />
+              <span>Tự Động Đăng Nhập (Pre-flight Auto-Login)</span>
+            </div>
+            <div className="space-y-2 font-mono text-xs">
+              <div>
+                <label className="block text-zinc-400 text-[11px] mb-1">Đường dẫn trang Login (Login URL):</label>
+                <input
+                  type="text"
+                  value={authLoginUrl}
+                  onChange={(e) => setAuthLoginUrl(e.target.value)}
+                  placeholder="/admin/login or /login"
+                  className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-zinc-400 text-[11px] mb-1">Username / Email:</label>
+                  <input
+                    type="text"
+                    value={authUsername}
+                    onChange={(e) => setAuthUsername(e.target.value)}
+                    placeholder="admin or user@domain.com"
+                    className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 text-[11px] mb-1">Password:</label>
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 text-[11px] mb-1">Submit Button Selector (Tùy chọn):</label>
+                <input
+                  type="text"
+                  value={authSubmitSelector}
+                  onChange={(e) => setAuthSubmitSelector(e.target.value)}
+                  placeholder="button[type='submit']"
+                  className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 p-3.5 rounded-lg border border-zinc-800 bg-[#0a0a0c]">
+            <div className="text-xs font-semibold text-zinc-200 font-mono flex items-center gap-1.5">
+              <Lock className="h-4 w-4 text-purple-400" />
+              <span>HTTP Authorization Token (Bearer Token Injection)</span>
+            </div>
+            <div>
+              <label className="block text-zinc-400 text-[11px] mb-1">Bearer Token / Header:</label>
+              <input
+                type="text"
+                value={authBearerToken}
+                onChange={(e) => setAuthBearerToken(e.target.value)}
+                placeholder="Bearer eyJhbGciOi..."
+                className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          {authSaveSuccess && (
+            <div className="rounded border border-emerald-900/60 bg-emerald-950/20 p-2 text-xs font-mono text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <span>Đã lưu thành công cấu hình Authentication!</span>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setAuthModalOpen(false)}
+              className="px-3 py-1.5 rounded border border-zinc-700 bg-zinc-800 text-xs font-mono text-zinc-300 hover:bg-zinc-700"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAuthProfile}
+              disabled={savingAuth}
+              className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-xs font-mono font-medium text-white transition disabled:opacity-50"
+            >
+              {savingAuth ? "Đang lưu..." : "Lưu Cấu Hình Auth"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

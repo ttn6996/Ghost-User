@@ -14,6 +14,10 @@ from app.db.models import Project, TestCase, TestRun, DiscoveryReport, utc_now
 from app.schemas.project import AutonomousAuditRequest, AutonomousAuditResponse
 from app.services.source_parser import SourceCodeParser
 from app.services.dev_server import DevServerRunner
+from app.db.models import AISetting
+from app.services.ai_client import AIClientService
+from sqlalchemy import select
+import base64
 from apps.worker.runner.crawler import WebCrawler
 from apps.worker.runner.engine import BrowserExecutionEngine
 from packages.shared.constants import RunStatus
@@ -87,6 +91,7 @@ class AutonomousAuditService:
             max_pages=request.max_pages,
             allow_local=project.allow_local_loopback,
             seed_paths=seed_paths,
+            auth_profile=project.auth_profile_json,
         )
 
         crawl_result = crawler.crawl()
@@ -172,6 +177,42 @@ class AutonomousAuditService:
                         "error_summary": str(e),
                     })
 
+        # 5. Optional Multimodal Visual QA via configured AI
+        visual_qa_report = None
+        ai_setting = self.db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
+        if ai_setting and ai_setting.enabled and ai_setting.api_key:
+            # Check if any step result has a screenshot
+            try:
+                from app.core.config import settings
+                from app.db.models import TestStepResult
+                # Find most recent screenshot from executed runs
+                step_with_shot = None
+                for er in executed_runs:
+                    shot_step = self.db.execute(
+                        select(TestStepResult)
+                        .filter(TestStepResult.test_run_id == er["id"], TestStepResult.screenshot_path != None)
+                        .order_by(TestStepResult.step_index.desc())
+                    ).scalars().first()
+                    if shot_step:
+                        step_with_shot = shot_step
+                        break
+
+                if step_with_shot and step_with_shot.screenshot_path:
+                    shot_file = Path(settings.ARTIFACT_STORAGE_DIR) / step_with_shot.screenshot_path
+                    if shot_file.exists():
+                        img_b64 = base64.b64encode(shot_file.read_bytes()).decode("utf-8")
+                        visual_qa_report = AIClientService.analyze_screenshot_for_ui_bugs(
+                            image_base64=img_b64,
+                            page_url=project.base_url,
+                            provider=ai_setting.provider,
+                            base_url=ai_setting.base_url,
+                            api_key=ai_setting.api_key,
+                            model=ai_setting.model,
+                        )
+                        logger.info(f"Visual QA Audit finished with score {visual_qa_report.get('visual_score_out_of_100')}/100")
+            except Exception as v_err:
+                logger.warning(f"Visual QA analysis skipped: {v_err}")
+
         summary_msg = (
             f"Autonomous audit finished. Inspected {len(crawl_result.get('pages', []))} live pages, "
             f"{len(static_routes)} static routes. Found {crawl_result.get('broken_links_count', 0)} broken links, "
@@ -198,4 +239,5 @@ class AutonomousAuditService:
             test_runs=executed_runs,
             discovery_report_id=discovery_report.id,
             audit_summary=summary_msg,
+            visual_qa_report=visual_qa_report,
         )

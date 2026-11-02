@@ -242,3 +242,4 @@ class AutonomousAuditResponse(BaseModel):
     test_runs: List[Dict[str, Any]] = Field(default_factory=list)
     discovery_report_id: Optional[str] = None
     audit_summary: str = ""
+    visual_qa_report: Optional[Dict[str, Any]] = None

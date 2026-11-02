@@ -11,6 +11,8 @@ import {
   DevServerInfo,
   SourceScanResult,
   AutonomousAuditResponse,
+  AISetting,
+  AITestConnectionResult,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -148,4 +150,14 @@ export const api = {
     request<Schedule>(`/api/v1/schedules/${id}/toggle`, { method: "POST" }),
   deleteSchedule: (id: string) => 
     request<void>(`/api/v1/schedules/${id}`, { method: "DELETE" }),
+
+  // AI Intelligence Settings
+  getAISettings: () => request<AISetting | null>("/api/v1/ai-settings"),
+  saveAISettings: (data: { provider: string; base_url?: string; api_key?: string; model: string; enabled?: boolean }) =>
+    request<AISetting>("/api/v1/ai-settings", { method: "POST", body: JSON.stringify(data) }),
+  loadAIModels: (data: { provider: string; base_url?: string; api_key?: string }) =>
+    request<{ provider: string; models: string[] }>("/api/v1/ai-settings/load-models", { method: "POST", body: JSON.stringify(data) }),
+  testAIConnection: (data: { provider: string; base_url?: string; api_key?: string; model?: string }) =>
+    request<AITestConnectionResult>("/api/v1/ai-settings/test-connection", { method: "POST", body: JSON.stringify(data) }),
+  getExportReportUrl: (projectId: string) => `${API_BASE}/api/v1/projects/${projectId}/export-report`,
 };

@@ -21,6 +21,7 @@ from apps.worker.runner.security import (
 )
 from packages.shared.schemas import TestDefinition
 from packages.shared.data_generator import SyntheticDataGenerator
+from apps.worker.runner.auth import inject_auth_profile
 
 logger = logging.getLogger("ghost-user")
 
@@ -35,12 +36,14 @@ class WebCrawler:
         max_depth: int = 2,
         allow_local: Optional[bool] = None,
         seed_paths: Optional[List[str]] = None,
+        auth_profile: Optional[Dict[str, Any]] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.max_pages = min(max(max_pages, 1), 30)
         self.max_depth = min(max(max_depth, 1), 3)
         self.allow_local = get_effective_allow_local(allow_local)
         self.seed_paths = [p for p in (seed_paths or []) if p]
+        self.auth_profile = auth_profile
 
         parsed_base = urlparse(self.base_url)
         self.base_origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
@@ -96,6 +99,8 @@ class WebCrawler:
 
             page = context.new_page()
             page.set_default_timeout(15000)
+            # Inject auth profile
+            inject_auth_profile(context=context, page=page, base_url=self.base_url, auth_profile=self.auth_profile)
 
             # Capture console errors
             page.on("console", lambda msg: console_errors.append({

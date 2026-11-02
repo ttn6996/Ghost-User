@@ -7,6 +7,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
+from fastapi.responses import HTMLResponse
+from app.services.report_exporter import ReportExporter
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
@@ -620,3 +622,38 @@ def run_project_autonomous_audit(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Autonomous UI Audit failed: {e}"
         )
+
+
+@router.get("/{project_id}/export-report", response_class=HTMLResponse)
+def export_project_audit_report(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Generates a standalone, print-ready HTML/PDF audit report."""
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+
+    discovery = db.execute(
+        select(DiscoveryReport)
+        .filter(DiscoveryReport.project_id == project_id)
+        .order_by(DiscoveryReport.created_at.desc())
+        .limit(1)
+    ).scalars().first()
+
+    tc_ids = [tc.id for tc in project.test_cases]
+    runs = []
+    if tc_ids:
+        runs = list(db.execute(
+            select(TestRun)
+            .filter(TestRun.test_case_id.in_(tc_ids))
+            .order_by(TestRun.created_at.desc())
+            .limit(20)
+        ).scalars().all())
+
+    html_content = ReportExporter.generate_audit_html(
+        project=project,
+        discovery_report=discovery,
+        test_runs=runs,
+    )
+    return HTMLResponse(content=html_content, media_type="text/html")
