@@ -234,7 +234,7 @@ export default function SettingsPage() {
       </div>
 
       {/* AI Model & Multi-Provider Configuration Card */}
-      <div className="rounded-xl border border-zinc-800 bg-[#121316] p-6 space-y-6 shadow-sm">
+      <div className="rounded-xl border border-[#232630] bg-[#121316] p-6 space-y-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-200 shadow-sm">
@@ -274,7 +274,7 @@ export default function SettingsPage() {
               <select
                 value={aiProvider}
                 onChange={(e) => handleProviderChange(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               >
                 {Object.entries(PROVIDER_PRESETS).map(([key, item]) => (
                   <option key={key} value={key}>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                   value={aiBaseUrl}
                   onChange={(e) => setAiBaseUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 />
               </div>
               <p className="mt-1 text-[11px] text-zinc-500">
@@ -325,7 +325,7 @@ export default function SettingsPage() {
 
             {/* Saved Keys Pool Badges */}
             {savedKeysPool.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2 p-2 rounded-lg bg-[#0e0f12] border border-zinc-800/80">
+              <div className="flex flex-wrap gap-2 mb-2 p-2 rounded-lg bg-[#0c0d10] border border-[#232630]/80">
                 {savedKeysPool.map((k, idx) => (
                   <span
                     key={idx}
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                     ? "Nhập các key mới (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy) để thay thế hoặc mở rộng pool..."
                     : "Dán một hoặc nhiều API Key vào đây (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy)...\ne.g.\nsk-proj-primaryKey123...\nsk-proj-backupKey456..."
                 }
-                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 pr-10 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 pr-10 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               />
               <button
                 type="button"
@@ -387,7 +387,7 @@ export default function SettingsPage() {
                 <select
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 >
                   {availableModels.map((m) => (
                     <option key={m} value={m}>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
                   placeholder="e.g. gemini-1.5-flash or gpt-4o-mini"
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 />
               )}
               {loadModelsMsg && (
@@ -420,7 +420,7 @@ export default function SettingsPage() {
                 value={aiModel}
                 onChange={(e) => setAiModel(e.target.value)}
                 placeholder="Gõ tên model bất kỳ nếu không có trong list"
-                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               />
               <p className="mt-1 text-[11px] text-zinc-500">
                 Hỗ trợ bất kỳ custom model tag nào (e.g. <code className="text-zinc-400">qwen2.5-coder:14b</code>).
@@ -430,7 +430,7 @@ export default function SettingsPage() {
 
           {/* Test Result Display */}
           {aiTestResult && (
-            <div className="p-4 rounded-lg border border-zinc-800 bg-[#0e0f12] text-xs font-sans space-y-2.5">
+            <div className="p-4 rounded-lg border border-[#232630] bg-[#0c0d10] text-xs font-sans space-y-2.5">
               <div className="flex items-start gap-2.5">
                 <div className={`mt-0.5 p-1 rounded-full ${aiTestResult.success ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
                   {aiTestResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
@@ -461,7 +461,7 @@ export default function SettingsPage() {
 
               {/* Individual Key Diagnostic Breakdown */}
               {aiTestResult.key_details && aiTestResult.key_details.length > 1 && (
-                <div className="pt-2 border-t border-zinc-800/80 space-y-1.5 pl-7 font-mono text-[11px]">
+                <div className="pt-2 border-t border-[#232630]/80 space-y-1.5 pl-7 font-mono text-[11px]">
                   <div className="text-zinc-500 font-sans text-[11px]">Chẩn đoán từng API Key:</div>
                   {aiTestResult.key_details.map((kd) => (
                     <div key={kd.index} className="flex items-center justify-between py-0.5">
@@ -480,7 +480,7 @@ export default function SettingsPage() {
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-zinc-800">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#232630]">
             <button
               type="button"
               onClick={handleTestAIConnection}
@@ -517,7 +517,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Backend API & Engine Card */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-5">
+      <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300">
@@ -558,11 +558,11 @@ export default function SettingsPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 font-mono text-xs text-zinc-300">
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <span className="text-zinc-500 block text-[10px] uppercase mb-1">API Base URL</span>
             <span>{process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}</span>
           </div>
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <span className="text-zinc-500 block text-[10px] uppercase mb-1">Runtime Environment</span>
             <span>{health?.environment || "development"}</span>
           </div>
@@ -570,7 +570,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Security Policies Card */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-4">
+      <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
             <ShieldCheck className="h-5 w-5" />
@@ -582,7 +582,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-3 pt-2 font-mono text-xs">
-          <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <div>
               <span className="font-semibold text-zinc-200">Private IP / RFC1918 Blocking</span>
               <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
@@ -594,7 +594,7 @@ export default function SettingsPage() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <div>
               <span className="font-semibold text-zinc-200">Origin Domain Confinement</span>
               <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
@@ -606,7 +606,7 @@ export default function SettingsPage() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="flex items-center justify-between p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <div>
               <span className="font-semibold text-zinc-200">Artifact Traversal Guard</span>
               <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
@@ -621,7 +621,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Storage and Browser Configuration */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-4">
+      <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300">
             <Cpu className="h-5 w-5" />
@@ -633,15 +633,15 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 font-mono text-xs">
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <span className="text-zinc-500 block text-[10px] uppercase mb-1">Browser Engine</span>
             <span className="text-zinc-200 font-semibold">Playwright Chromium</span>
           </div>
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <span className="text-zinc-500 block text-[10px] uppercase mb-1">Persistence</span>
             <span className="text-zinc-200 font-semibold">SQLite WAL Mode</span>
           </div>
-          <div className="p-3 rounded-lg border border-zinc-800/80 bg-[#121216]">
+          <div className="p-3 rounded-lg border border-[#232630]/80 bg-[#0c0d10]">
             <span className="text-zinc-500 block text-[10px] uppercase mb-1">Trace Mode</span>
             <span className="text-zinc-200 font-semibold">Preserve on Failure</span>
           </div>

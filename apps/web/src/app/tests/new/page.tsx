@@ -187,17 +187,17 @@ function NewTestContent() {
           <button
             type="button"
             onClick={() => loadTemplate("search")}
-            className="px-2.5 py-1 text-xs rounded border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 flex items-center gap-1 font-mono"
+            className="px-2.5 py-1 text-xs rounded border border-[#232630] bg-zinc-900 text-zinc-300 hover:bg-zinc-800 flex items-center gap-1 font-mono"
           >
-            <Sparkles className="h-3 w-3 text-purple-400" />
+            <Sparkles className="h-3 w-3 text-zinc-400" />
             <span>Search</span>
           </button>
           <button
             type="button"
             onClick={() => loadTemplate("login")}
-            className="px-2.5 py-1 text-xs rounded border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 flex items-center gap-1 font-mono"
+            className="px-2.5 py-1 text-xs rounded border border-[#232630] bg-zinc-900 text-zinc-300 hover:bg-zinc-800 flex items-center gap-1 font-mono"
           >
-            <Sparkles className="h-3 w-3 text-purple-400" />
+            <Sparkles className="h-3 w-3 text-zinc-400" />
             <span>Login</span>
           </button>
         </div>
@@ -212,7 +212,7 @@ function NewTestContent() {
         )}
 
         {/* Metadata Card */}
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono text-zinc-300 mb-1">
@@ -222,7 +222,7 @@ function NewTestContent() {
                 required
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
               >
                 <option value="">-- Choose Project --</option>
                 {projects.map((p) => (
@@ -243,7 +243,7 @@ function NewTestContent() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. User Registration Journey"
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
               />
             </div>
           </div>
@@ -257,7 +257,7 @@ function NewTestContent() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What this journey verifies..."
-              className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
             />
           </div>
 
@@ -267,7 +267,7 @@ function NewTestContent() {
               id="enabled-check"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
-              className="rounded border-zinc-700 bg-zinc-900 text-purple-600 focus:ring-0"
+              className="rounded border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-0"
             />
             <label htmlFor="enabled-check" className="text-xs text-zinc-300 font-mono">
               Enabled (active for execution and scheduling)
@@ -276,16 +276,16 @@ function NewTestContent() {
         </div>
 
         {/* AI Prompt-to-Journey Card */}
-        <div className="rounded-xl border border-purple-500/30 bg-gradient-to-b from-purple-950/20 via-[#0f0f12] to-[#0f0f12] p-5 space-y-3">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300">
+              <div className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-700/80 text-zinc-200">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                   <span>AI Prompt-to-Journey</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 font-mono border border-zinc-700/60">
                     Tự động hoá
                   </span>
                 </h3>
@@ -303,7 +303,7 @@ function NewTestContent() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Ví dụ: 'Vào trang login, đăng nhập bằng tài khoản user01 và mật khẩu admin123, sau đó kiểm tra xem đã vào được trang chủ chưa và chụp ảnh'"
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] p-3 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
               />
             </div>
 
@@ -324,7 +324,7 @@ function NewTestContent() {
                     setAiPrompt(chip.text);
                     handleGenerateAi(chip.text);
                   }}
-                  className="px-2 py-0.5 text-[11px] rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-purple-300 transition-colors"
+                  className="px-2 py-0.5 text-[11px] rounded-md bg-zinc-900 hover:bg-zinc-800 border border-[#232630] text-zinc-300 hover:text-white transition-colors"
                 >
                   {chip.label}
                 </button>
@@ -351,7 +351,7 @@ function NewTestContent() {
                 type="button"
                 disabled={generatingAi}
                 onClick={() => handleGenerateAi()}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white flex items-center gap-2 transition disabled:opacity-50 shadow-sm shrink-0"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 flex items-center gap-2 transition active:scale-[0.98] disabled:opacity-50 shadow-sm shrink-0"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>{generatingAi ? "Đang phân tích & tạo..." : "Tự động tạo kịch bản"}</span>
@@ -361,7 +361,7 @@ function NewTestContent() {
         </div>
 
         {/* Step Editor Card */}
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5">
           <StepEditor steps={steps} onChange={setSteps} />
         </div>
 
@@ -407,7 +407,7 @@ function NewTestContent() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-colors shadow-sm disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-zinc-100 hover:bg-white text-xs font-semibold text-zinc-950 transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             <span>{submitting ? "Saving..." : "Save Test Case"}</span>

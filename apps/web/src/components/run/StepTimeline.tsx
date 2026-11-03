@@ -13,7 +13,7 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
 
   if (!steps || steps.length === 0) {
     return (
-      <div className="p-8 text-center border border-zinc-800 rounded-lg text-sm text-zinc-400">
+      <div className="p-8 text-center border border-[#232630] rounded-xl text-xs font-mono text-zinc-400 bg-[#13151b]">
         No step results recorded yet.
       </div>
     );
@@ -27,7 +27,7 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="relative max-w-5xl max-h-[90vh] bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative max-w-5xl max-h-[90vh] bg-[#13151b] border border-[#232630] rounded-xl overflow-hidden shadow-2xl">
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/90 transition-colors"
@@ -44,7 +44,7 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
       )}
 
       {/* Ordered Timeline */}
-      <div className="relative border-l border-zinc-800 ml-4 space-y-6">
+      <div className="relative border-l border-[#232630] ml-4 space-y-6">
         {steps.map((step) => {
           const isError = step.status === "failed" || step.status === "error";
           const screenshotUrl = step.screenshot_path ? api.getArtifactUrl(step.screenshot_path) : null;
@@ -53,7 +53,7 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
             <div key={step.id || step.step_index} className="relative pl-6">
               {/* Dot indicator */}
               <div
-                className={`absolute -left-2 top-1.5 h-4 w-4 rounded-full border-2 border-[#09090b] ${
+                className={`absolute -left-2 top-1.5 h-4 w-4 rounded-full border-2 border-[#0c0d10] ${
                   step.status === "passed"
                     ? "bg-emerald-500"
                     : isError
@@ -63,10 +63,10 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
               />
 
               <div
-                className={`rounded-xl border p-4 transition-all ${
+                className={`rounded-xl border p-4 transition-all shadow-subtle ${
                   isError
                     ? "border-rose-900/60 bg-rose-950/20"
-                    : "border-zinc-800/80 bg-[#111114]"
+                    : "border-[#232630] bg-[#13151b]"
                 }`}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -74,13 +74,13 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
                     <span className="font-mono text-xs font-semibold text-zinc-400">
                       #{step.step_index + 1}
                     </span>
-                    <span className="font-mono text-sm font-semibold text-zinc-100">
+                    <span className="font-mono text-xs font-semibold text-zinc-100">
                       {step.action}
                     </span>
                     <StatusBadge status={step.status} size="sm" />
                     {step.error_message?.includes("[SELF_HEALED]") && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-500/40 text-[10px] font-mono">
-                        <Sparkles className="h-3 w-3 text-purple-400" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 text-[10px] font-mono">
+                        <Sparkles className="h-3 w-3 text-sky-400" />
                         <span>Self-Healed</span>
                       </span>
                     )}
@@ -95,8 +95,8 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
                 {/* Diagnostics / Self-Healing info */}
                 {step.error_message && (
                   step.error_message.includes("[SELF_HEALED]") ? (
-                    <div className="mt-3 rounded-lg border border-purple-900/40 bg-purple-950/30 p-3 text-xs font-mono text-purple-300 flex items-start gap-2.5">
-                      <Sparkles className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
+                    <div className="mt-3 rounded-lg border border-sky-500/30 bg-sky-500/10 p-3 text-xs font-mono text-sky-300 flex items-start gap-2.5">
+                      <Sparkles className="h-4 w-4 text-sky-400 shrink-0 mt-0.5" />
                       <div className="overflow-x-auto whitespace-pre-wrap">{step.error_message}</div>
                     </div>
                   ) : (
@@ -111,12 +111,12 @@ export const StepTimeline: React.FC<StepTimelineProps> = ({ steps }) => {
                 {screenshotUrl && (
                   <div className="mt-3">
                     <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5 mb-1.5">
-                      <Camera className="h-3.5 w-3.5 text-purple-400" />
+                      <Camera className="h-3.5 w-3.5 text-zinc-400" />
                       <span>Captured Evidence</span>
                     </div>
                     <div 
                       onClick={() => setSelectedImage(screenshotUrl)}
-                      className="group relative inline-block cursor-pointer overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 max-w-sm"
+                      className="group relative inline-block cursor-pointer overflow-hidden rounded-lg border border-[#232630] bg-zinc-950/80 max-w-sm"
                     >
                       <img
                         src={screenshotUrl}

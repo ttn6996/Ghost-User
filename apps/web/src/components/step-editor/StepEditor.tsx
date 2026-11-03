@@ -111,12 +111,12 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
         >
           {jsonMode ? (
             <>
-              <ListTree className="h-3.5 w-3.5 text-purple-400" />
+              <ListTree className="h-3.5 w-3.5 text-zinc-400" />
               <span>Form View</span>
             </>
           ) : (
             <>
-              <Code2 className="h-3.5 w-3.5 text-purple-400" />
+              <Code2 className="h-3.5 w-3.5 text-zinc-400" />
               <span>JSON Mode</span>
             </>
           )}
@@ -129,7 +129,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
             value={rawJson}
             onChange={handleRawJsonChange}
             rows={14}
-            className="w-full rounded-lg border border-zinc-800 bg-[#0c0c0e] p-3 font-mono text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+            className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] p-3 font-mono text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
           />
           {jsonError ? (
             <div className="flex items-center gap-2 text-xs text-rose-400 font-mono">
@@ -148,7 +148,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
           {steps.map((step, idx) => (
             <div
               key={idx}
-              className="rounded-lg border border-zinc-800 bg-[#111114] p-4 space-y-3 relative group"
+              className="rounded-lg border border-[#232630] bg-[#13151b] p-4 space-y-3 relative group"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                   <select
                     value={step.action}
                     onChange={(e) => updateStep(idx, { action: e.target.value as ActionType })}
-                    className="rounded border border-zinc-700 bg-[#16161a] px-2.5 py-1 text-xs font-mono font-medium text-purple-300 focus:border-purple-500 focus:outline-none"
+                    className="rounded border border-zinc-700 bg-[#16161a] px-2.5 py-1 text-xs font-mono font-medium text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                   >
                     {ACTION_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -205,7 +205,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.url || ""}
                       onChange={(e) => updateStep(idx, { url: e.target.value })}
                       placeholder="/dashboard or https://..."
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -218,7 +218,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.selector || ""}
                       onChange={(e) => updateStep(idx, { selector: e.target.value })}
                       placeholder="button#submit, input[name='email'], .card"
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none font-mono"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none font-mono"
                     />
                   </div>
                 )}
@@ -231,7 +231,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.value || ""}
                       onChange={(e) => updateStep(idx, { value: e.target.value })}
                       placeholder="Text to type..."
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -244,7 +244,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.value || ""}
                       onChange={(e) => updateStep(idx, { value: e.target.value })}
                       placeholder="Option value or key"
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -257,7 +257,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.expected_text || ""}
                       onChange={(e) => updateStep(idx, { expected_text: e.target.value })}
                       placeholder="Text substring or exact phrase"
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -270,7 +270,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.expected_url || ""}
                       onChange={(e) => updateStep(idx, { expected_url: e.target.value })}
                       placeholder="/dashboard or complete url"
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -283,7 +283,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
                       value={step.name || ""}
                       onChange={(e) => updateStep(idx, { name: e.target.value })}
                       placeholder="e.g. checkout_modal_opened"
-                      className="w-full rounded border border-zinc-800 bg-[#0c0c0e] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                      className="w-full rounded border border-[#232630] bg-[#0c0d10] px-2.5 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                     />
                   </div>
                 )}
@@ -295,7 +295,7 @@ export const StepEditor: React.FC<StepEditorProps> = ({ steps, onChange }) => {
             <button
               type="button"
               onClick={() => addStep("click")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 text-xs font-medium text-purple-300 bg-purple-950/30 hover:bg-purple-900/40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 text-xs font-semibold text-zinc-100 bg-zinc-800 hover:bg-zinc-700 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Add Step</span>

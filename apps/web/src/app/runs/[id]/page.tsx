@@ -80,7 +80,7 @@ export default function RunDetailsPage() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-6 w-32 bg-zinc-800 rounded"></div>
-        <div className="h-36 bg-zinc-900 border border-zinc-800 rounded-xl"></div>
+        <div className="h-36 bg-zinc-900 border border-[#232630] rounded-xl"></div>
       </div>
     );
   }
@@ -91,7 +91,7 @@ export default function RunDetailsPage() {
         <div className="text-rose-400 font-mono text-sm">{error || "Run not found"}</div>
         <Link
           href="/runs"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-purple-400 hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Run History</span>
@@ -116,7 +116,7 @@ export default function RunDetailsPage() {
       </div>
 
       {/* Header Info Banner */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-5">
+      <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function RunDetailsPage() {
             {testCase && (
               <div className="mt-2 text-sm text-zinc-300 flex items-center gap-2">
                 <span>Journey:</span>
-                <span className="font-semibold text-purple-400">{testCase.name}</span>
+                <span className="font-semibold text-zinc-200">{testCase.name}</span>
               </div>
             )}
           </div>
@@ -149,7 +149,7 @@ export default function RunDetailsPage() {
               <a
                 href={api.getArtifactUrl(run.trace_path)}
                 download
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/40 bg-purple-950/30 text-xs font-medium text-purple-300 hover:bg-purple-900/40 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-xs font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white transition-colors"
               >
                 <FileArchive className="h-3.5 w-3.5" />
                 <span>Download Playwright Trace</span>
@@ -158,7 +158,7 @@ export default function RunDetailsPage() {
 
             <button
               onClick={() => loadData(false)}
-              className="p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200"
+              className="p-1.5 rounded-lg border border-[#232630] bg-zinc-900 text-zinc-400 hover:text-zinc-200"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
@@ -173,7 +173,7 @@ export default function RunDetailsPage() {
                 ? "border-rose-900/60 bg-rose-950/30 text-rose-300"
                 : isExecutionError
                 ? "border-amber-900/60 bg-amber-950/30 text-amber-300"
-                : "border-zinc-800 bg-zinc-900/40 text-zinc-300"
+                : "border-[#232630] bg-zinc-900/40 text-zinc-300"
             }`}
           >
             <AlertTriangle
@@ -195,7 +195,7 @@ export default function RunDetailsPage() {
         )}
 
         {/* Metadata Footer */}
-        <div className="pt-4 border-t border-zinc-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono text-zinc-400">
+        <div className="pt-4 border-t border-[#232630]/80 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono text-zinc-400">
           <div>
             <span className="text-zinc-500 block text-[10px] uppercase">Duration</span>
             <span className="text-zinc-200 font-semibold">
@@ -223,12 +223,12 @@ export default function RunDetailsPage() {
 
       {/* Tabs: Step Timeline vs Console Logs */}
       <div className="space-y-4">
-        <div className="flex border-b border-zinc-800 gap-4">
+        <div className="flex border-b border-[#232630] gap-4">
           <button
             onClick={() => setActiveTab("steps")}
             className={`pb-3 text-xs font-medium font-mono flex items-center gap-2 border-b-2 transition-colors ${
               activeTab === "steps"
-                ? "border-purple-500 text-purple-400"
+                ? "border-purple-500 text-zinc-200"
                 : "border-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >
@@ -239,7 +239,7 @@ export default function RunDetailsPage() {
             onClick={() => setActiveTab("logs")}
             className={`pb-3 text-xs font-medium font-mono flex items-center gap-2 border-b-2 transition-colors ${
               activeTab === "logs"
-                ? "border-purple-500 text-purple-400"
+                ? "border-purple-500 text-zinc-200"
                 : "border-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >

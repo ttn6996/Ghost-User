@@ -120,7 +120,7 @@ export default function SchedulesPage() {
             setModalOpen(true);
           }}
           disabled={testCases.length === 0}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-colors shadow-sm disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-semibold text-zinc-950 transition-all active:scale-[0.98] shadow-sm disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           <span>New Schedule</span>
@@ -128,12 +128,12 @@ export default function SchedulesPage() {
       </div>
 
       {loading ? (
-        <div className="h-64 bg-zinc-900/40 border border-zinc-800 rounded-xl animate-pulse"></div>
+        <div className="h-64 bg-zinc-900/40 border border-[#232630] rounded-xl animate-pulse"></div>
       ) : schedules.length > 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] overflow-hidden">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-zinc-800 text-zinc-400 font-mono bg-[#141418]">
+              <tr className="border-b border-[#232630] text-zinc-400 font-mono bg-[#0f1116]">
                 <th className="py-3 px-4 font-medium">Test Case</th>
                 <th className="py-3 px-4 font-medium">Frequency</th>
                 <th className="py-3 px-4 font-medium">Status</th>
@@ -147,7 +147,7 @@ export default function SchedulesPage() {
                   <td className="py-3 px-4 font-semibold text-zinc-200">
                     {getTestCaseName(s.test_case_id)}
                   </td>
-                  <td className="py-3 px-4 text-purple-400">
+                  <td className="py-3 px-4 text-zinc-300">
                     {s.interval_seconds
                       ? `Every ${s.interval_seconds >= 3600 ? `${s.interval_seconds / 3600}h` : `${s.interval_seconds}s`}`
                       : s.cron_expression || "Custom"}
@@ -157,7 +157,7 @@ export default function SchedulesPage() {
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border ${
                         s.enabled
                           ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/40"
-                          : "bg-zinc-900 text-zinc-500 border-zinc-800"
+                          : "bg-zinc-900 text-zinc-500 border-[#232630]"
                       }`}
                     >
                       <span className={`h-1.5 w-1.5 rounded-full ${s.enabled ? "bg-emerald-400" : "bg-zinc-600"}`} />
@@ -174,7 +174,7 @@ export default function SchedulesPage() {
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors border ${
                           s.enabled
                             ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
-                            : "bg-purple-950/40 border-purple-800/40 text-purple-300 hover:bg-purple-900/40"
+                            : "bg-zinc-800 border-zinc-700 text-zinc-200 hover:bg-zinc-700"
                         }`}
                       >
                         <Power className="h-3 w-3" />
@@ -225,7 +225,7 @@ export default function SchedulesPage() {
               required
               value={selectedTestCaseId}
               onChange={(e) => setSelectedTestCaseId(e.target.value)}
-              className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
             >
               {testCases.map((tc) => (
                 <option key={tc.id} value={tc.id}>
@@ -243,8 +243,8 @@ export default function SchedulesPage() {
                 onClick={() => setMode("interval")}
                 className={`flex-1 py-1.5 rounded-lg border text-xs font-mono transition-colors ${
                   mode === "interval"
-                    ? "bg-purple-950/40 border-purple-600/60 text-purple-300"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                    ? "bg-zinc-800 border-zinc-600 text-zinc-100 font-semibold"
+                    : "bg-zinc-900 border-[#232630] text-zinc-400 hover:bg-zinc-800"
                 }`}
               >
                 Fixed Interval
@@ -254,8 +254,8 @@ export default function SchedulesPage() {
                 onClick={() => setMode("cron")}
                 className={`flex-1 py-1.5 rounded-lg border text-xs font-mono transition-colors ${
                   mode === "cron"
-                    ? "bg-purple-950/40 border-purple-600/60 text-purple-300"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                    ? "bg-zinc-800 border-zinc-600 text-zinc-100 font-semibold"
+                    : "bg-zinc-900 border-[#232630] text-zinc-400 hover:bg-zinc-800"
                 }`}
               >
                 Cron Expression
@@ -271,7 +271,7 @@ export default function SchedulesPage() {
               <select
                 value={intervalSeconds}
                 onChange={(e) => setIntervalSeconds(Number(e.target.value))}
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
               >
                 <option value={60}>Every 1 minute (60s)</option>
                 <option value={300}>Every 5 minutes (300s)</option>
@@ -290,23 +290,23 @@ export default function SchedulesPage() {
                 value={cronExpression}
                 onChange={(e) => setCronExpression(e.target.value)}
                 placeholder="0 * * * * (hourly)"
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs font-mono text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
               />
             </div>
           )}
 
-          <div className="pt-3 flex justify-end gap-2 border-t border-zinc-800">
+          <div className="pt-3 flex justify-end gap-2 border-t border-[#232630]">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="px-3.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+              className="px-3.5 py-1.5 rounded-lg border border-[#232630] bg-zinc-900 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white shadow-sm disabled:opacity-50"
+              className="px-4 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-semibold text-zinc-950 shadow-sm disabled:opacity-50 active:scale-[0.98] transition-all"
             >
               {submitting ? "Saving..." : "Create Schedule"}
             </button>

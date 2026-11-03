@@ -36,15 +36,17 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity" 
         onClick={onClose} 
       />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-lg rounded-xl border border-zinc-800 bg-[#121216] p-6 shadow-2xl z-10">
-        <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
+      <div className="relative w-full max-w-lg rounded-xl border border-[#282c38] bg-[#161922] p-6 shadow-2xl z-10 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+        
+        <div className="flex items-start justify-between pb-4 border-b border-[#232630]">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">{title}</h2>
+            <h2 className="text-base font-semibold text-zinc-100">{title}</h2>
             {description && <p className="mt-1 text-xs text-zinc-400">{description}</p>}
           </div>
           <button

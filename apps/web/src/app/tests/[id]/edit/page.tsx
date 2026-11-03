@@ -116,7 +116,7 @@ export default function EditTestPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4">
           <div>
             <label className="block text-xs font-mono text-zinc-300 mb-1">Test Case Name *</label>
             <input
@@ -124,7 +124,7 @@ export default function EditTestPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
             />
           </div>
 
@@ -134,7 +134,7 @@ export default function EditTestPage() {
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
             />
           </div>
 
@@ -152,7 +152,7 @@ export default function EditTestPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5">
           <StepEditor steps={steps} onChange={setSteps} />
         </div>
 

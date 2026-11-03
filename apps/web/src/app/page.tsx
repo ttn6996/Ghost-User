@@ -6,7 +6,6 @@ import { api } from "@/lib/api";
 import { OverviewStats } from "@/lib/types";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { 
   FolderKanban, 
   PlayCircle, 
@@ -46,7 +45,7 @@ export default function OverviewPage() {
         <div className="h-8 w-48 bg-zinc-800 rounded"></div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-zinc-900 border border-zinc-800 rounded-xl"></div>
+            <div key={i} className="h-28 bg-[#13151b] border border-[#232630] rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -54,28 +53,28 @@ export default function OverviewPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Testing Overview</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-100">Testing Overview</h1>
+          <p className="mt-1 text-xs text-zinc-400">
             Real-time execution metrics and test reliability across active projects.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={loadData}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-xs font-mono text-zinc-300 hover:bg-zinc-800 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/90 text-xs font-mono text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-zinc-400 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
           </button>
           <Link
             href="/projects"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-medium text-zinc-950 transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-medium text-zinc-950 transition-all active:scale-[0.98] shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>New Project</span>
@@ -119,17 +118,17 @@ export default function OverviewPage() {
       </div>
 
       {/* Two Column Layout: Recent Runs & Recent Failures */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Runs Table */}
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4 shadow-subtle">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-zinc-300" />
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <PlayCircle className="h-4 w-4 text-zinc-400" />
               <span>Recent Test Runs</span>
             </h2>
             <Link
               href="/runs"
-              className="text-xs text-zinc-300 hover:text-purple-300 font-mono flex items-center gap-1"
+              className="text-xs text-zinc-400 hover:text-zinc-200 font-mono flex items-center gap-1 transition-colors"
             >
               <span>View all</span>
               <ArrowRight className="h-3 w-3" />
@@ -140,18 +139,18 @@ export default function OverviewPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-400 font-mono">
+                  <tr className="border-b border-zinc-800/80 text-zinc-400 font-mono">
                     <th className="pb-2 font-medium">Run ID</th>
                     <th className="pb-2 font-medium">Status</th>
                     <th className="pb-2 font-medium">Duration</th>
                     <th className="pb-2 font-medium text-right">Time</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/60 font-mono">
+                <tbody className="divide-y divide-zinc-800/40 font-mono">
                   {stats.recent_runs.map((r) => (
-                    <tr key={r.id} className="hover:bg-zinc-800/20">
+                    <tr key={r.id} className="hover:bg-zinc-800/20 transition-colors">
                       <td className="py-2.5 font-semibold text-zinc-200">
-                        <Link href={`/runs/${r.id}`} className="hover:text-zinc-300">
+                        <Link href={`/runs/${r.id}`} className="hover:text-zinc-100">
                           {r.id.slice(0, 8)}...
                         </Link>
                       </td>
@@ -170,32 +169,32 @@ export default function OverviewPage() {
               </table>
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-zinc-400">
+            <div className="py-8 text-center text-xs text-zinc-400 font-sans">
               No runs executed yet. Trigger a test case to see real history.
             </div>
           )}
         </div>
 
         {/* Recent Failures Feed */}
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4 shadow-subtle">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-rose-400" />
               <span>Recent Failures & Errors</span>
             </h2>
           </div>
 
           {stats && stats.recent_failures.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {stats.recent_failures.map((f) => (
                 <div
                   key={f.id}
-                  className="rounded-lg border border-rose-900/40 bg-rose-950/20 p-3 text-xs space-y-1.5"
+                  className="rounded-lg border border-rose-900/30 bg-rose-950/20 p-3 text-xs space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
                     <Link
                       href={`/runs/${f.id}`}
-                      className="font-mono font-semibold text-rose-300 hover:underline"
+                      className="font-mono font-semibold text-rose-300 hover:text-rose-200 hover:underline"
                     >
                       Run #{f.id.slice(0, 8)}
                     </Link>
@@ -208,7 +207,7 @@ export default function OverviewPage() {
               ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-zinc-400">
+            <div className="py-8 text-center text-xs text-zinc-400 font-sans">
               All clear! No recent assertion failures or errors detected.
             </div>
           )}

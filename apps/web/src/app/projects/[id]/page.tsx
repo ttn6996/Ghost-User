@@ -330,7 +330,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-6 w-32 bg-zinc-800 rounded"></div>
-        <div className="h-24 bg-zinc-900 border border-zinc-800 rounded-xl"></div>
+        <div className="h-24 bg-zinc-900 border border-[#232630] rounded-xl"></div>
       </div>
     );
   }
@@ -364,7 +364,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Project Header Card */}
-      <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-6 space-y-4 shadow-sm">
+      <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -392,7 +392,7 @@ export default function ProjectDetailPage() {
               </div>
 
               {project.source_code_path && (
-                <div className="flex items-center gap-1.5 text-zinc-400 border-l border-zinc-800 pl-4">
+                <div className="flex items-center gap-1.5 text-zinc-400 border-l border-[#232630] pl-4">
                   <FolderGit2 className="h-3.5 w-3.5 text-blue-400" />
                   <span className="truncate max-w-sm text-zinc-300">{project.source_code_path}</span>
                 </div>
@@ -452,7 +452,7 @@ export default function ProjectDetailPage() {
           <p className="text-xs text-zinc-400 max-w-2xl">{project.description}</p>
         )}
 
-        <div className="pt-4 border-t border-zinc-800/80 flex flex-wrap items-center gap-6 text-xs font-mono text-zinc-400">
+        <div className="pt-4 border-t border-[#232630]/80 flex flex-wrap items-center gap-6 text-xs font-mono text-zinc-400">
           <div>
             Total Tests: <span className="text-zinc-200 font-semibold">{testCases.length}</span>
           </div>
@@ -469,12 +469,12 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-[#232630] pb-2">
         <button
           onClick={() => setActiveTab("tests")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-medium transition ${
             activeTab === "tests"
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/40"
+              ? "bg-zinc-800 text-zinc-100 border border-zinc-700/80 shadow-xs font-semibold"
               : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
           }`}
         >
@@ -491,7 +491,7 @@ export default function ProjectDetailPage() {
           }}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-medium transition ${
             activeTab === "source"
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/40"
+              ? "bg-zinc-800 text-zinc-100 border border-zinc-700/80 shadow-xs font-semibold"
               : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
           }`}
         >
@@ -508,14 +508,14 @@ export default function ProjectDetailPage() {
           onClick={() => setActiveTab("discovery")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-medium transition ${
             activeTab === "discovery"
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/40"
+              ? "bg-zinc-800 text-zinc-100 border border-zinc-700/80 shadow-xs font-semibold"
               : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
           }`}
         >
           <Compass className="h-4 w-4" />
           <span>Auto-Discovery & Crawler</span>
           {discoveryReport && (
-            <span className="px-1.5 py-0.2 rounded-full bg-purple-500/30 text-[10px] text-zinc-700">
+            <span className="px-1.5 py-0.2 rounded-full bg-zinc-700 text-[10px] text-zinc-200">
               {discoveryReport.pages_count} trang
             </span>
           )}
@@ -533,10 +533,10 @@ export default function ProjectDetailPage() {
           </div>
 
           {testCases.length > 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
+            <div className="rounded-xl border border-[#232630] bg-[#13151b] overflow-hidden">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-400 font-mono bg-[#141418]">
+                  <tr className="border-b border-[#232630] text-zinc-400 font-mono bg-[#141418]">
                     <th className="py-3 px-4 font-medium">Test Case</th>
                     <th className="py-3 px-4 font-medium">Steps</th>
                     <th className="py-3 px-4 font-medium">Enabled</th>
@@ -569,7 +569,7 @@ export default function ProjectDetailPage() {
                           <button
                             onClick={() => handleRunTest(tc.id)}
                             disabled={runningTestId === tc.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30 text-xs transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800/90 border border-zinc-700/80 text-zinc-200 hover:bg-zinc-700 hover:text-white text-xs font-medium transition-all active:scale-[0.98]"
                           >
                             <Play className="h-3 w-3 fill-current" />
                             <span>{runningTestId === tc.id ? "Queuing..." : "Run"}</span>
@@ -609,7 +609,7 @@ export default function ProjectDetailPage() {
       {activeTab === "source" && (
         <div className="space-y-6">
           {/* Autonomous Audit Hero Banner */}
-          <div className="rounded-xl border border-zinc-800 bg-[#121316] p-6 space-y-4 shadow-sm">
+          <div className="rounded-xl border border-[#232630] bg-[#13151b] p-6 space-y-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -622,7 +622,7 @@ export default function ProjectDetailPage() {
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
-                  Tự động quét cấu trúc AST source code, khởi động background dev server, &quot;bò&quot; crawl toàn bộ giao diện bằng Playwright, tự động sinh test form với dữ liệu mẫu tagged (<code className="text-purple-300 font-mono">AUTOQA_...</code>) và tự động dọn dẹp cơ sở dữ liệu sau kiểm thử.
+                  Tự động quét cấu trúc AST source code, khởi động background dev server, &quot;bò&quot; crawl toàn bộ giao diện bằng Playwright, tự động sinh test form với dữ liệu mẫu tagged (<code className="text-zinc-300 font-mono">AUTOQA_...</code>) và tự động dọn dẹp cơ sở dữ liệu sau kiểm thử.
                 </p>
               </div>
 
@@ -642,7 +642,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Directive Prompt Input Box */}
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 space-y-3">
+            <div className="rounded-lg border border-[#232630] bg-zinc-950/70 p-4 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
@@ -669,7 +669,7 @@ export default function ProjectDetailPage() {
                 onChange={(e) => setDirectivePrompt(e.target.value)}
                 placeholder="Ví dụ: audit, test hệ thống, với tài khoản khách hàng: user01/admin123, user02/admin123; tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Hãy kiểm tra các trang quản trị, form và luồng thao tác."
                 rows={3}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900/90 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition font-mono leading-relaxed"
+                className="w-full rounded-md border border-[#232630] bg-zinc-900/90 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition font-mono leading-relaxed"
               />
 
               <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -681,7 +681,7 @@ export default function ProjectDetailPage() {
                       "audit, test hệ thống, với tài khoản khách hàng: user01/admin123, user02/admin123; tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Tự động crawl toàn bộ trang và thử nghiệm luồng nghiệp vụ."
                     )
                   }
-                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] transition"
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-[#232630] text-zinc-300 text-[11px] transition"
                 >
                   + Khách hàng (user01/02) &amp; Admin
                 </button>
@@ -692,7 +692,7 @@ export default function ProjectDetailPage() {
                       "Kiểm tra bảo mật và phân quyền với tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Tập trung audit các trang /admin, thiết bị và cấu hình hệ thống."
                     )
                   }
-                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] transition"
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-[#232630] text-zinc-300 text-[11px] transition"
                 >
                   + Audit trang Quản trị (Admin only)
                 </button>
@@ -700,11 +700,11 @@ export default function ProjectDetailPage() {
             </div>
 
             {auditing && (
-              <div className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-4 text-xs font-mono text-zinc-700 flex items-center gap-3 animate-pulse">
+              <div className="rounded-lg border border-sky-500/30 bg-sky-950/20 p-4 text-xs font-mono text-sky-200 flex items-center gap-3 animate-pulse">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-300 shrink-0" />
                 <div>
                   <div className="font-semibold">Đang thực thi quy trình Autonomous UI Audit...</div>
-                  <div className="text-[11px] text-purple-300/80 mt-0.5">
+                  <div className="text-[11px] text-sky-300/80 mt-0.5">
                     1. AST Source scan &rarr; 2. Dev server launch &rarr; 3. Seeded Playwright crawl &rarr; 4. Form tests execution &rarr; 5. Tagged data teardown.
                   </div>
                 </div>
@@ -746,7 +746,7 @@ export default function ProjectDetailPage() {
 
                 {/* Extracted Accounts from Directive Prompt */}
                 {auditResult.extracted_accounts && auditResult.extracted_accounts.length > 0 && (
-                  <div className="p-3 rounded-lg border border-zinc-800 bg-zinc-900/80 space-y-2">
+                  <div className="p-3 rounded-lg border border-[#232630] bg-zinc-900/80 space-y-2">
                     <div className="flex items-center justify-between text-xs font-semibold text-zinc-200">
                       <div className="flex items-center gap-2">
                         <KeyRound className="h-3.5 w-3.5 text-zinc-400" />
@@ -761,7 +761,7 @@ export default function ProjectDetailPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
                       {auditResult.extracted_accounts.map((acc, idx) => (
-                        <div key={idx} className="p-2 rounded border border-zinc-800/80 bg-zinc-950/60 space-y-1">
+                        <div key={idx} className="p-2 rounded border border-[#232630]/80 bg-zinc-950/60 space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-zinc-200 truncate">{acc.username}</span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono uppercase font-semibold ${
@@ -784,7 +784,7 @@ export default function ProjectDetailPage() {
 
                 {/* Visual QA Multimodal Report */}
                 {auditResult.visual_qa_report && (
-                  <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-950/20 space-y-2">
+                  <div className="p-3.5 rounded-lg border border-[#232630] bg-[#101217] space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-zinc-300" />
@@ -793,7 +793,7 @@ export default function ProjectDetailPage() {
                           {auditResult.visual_qa_report.visual_score_out_of_100}/100
                         </span>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700/60">
                         AI Vision Analyzed
                       </span>
                     </div>
@@ -801,7 +801,7 @@ export default function ProjectDetailPage() {
                     {auditResult.visual_qa_report.issues && auditResult.visual_qa_report.issues.length > 0 ? (
                       <div className="space-y-1 pt-1 font-mono text-[11px]">
                         {auditResult.visual_qa_report.issues.map((iss: any, i: number) => (
-                          <div key={i} className="p-1.5 rounded bg-zinc-900/60 border border-zinc-800 text-zinc-300">
+                          <div key={i} className="p-1.5 rounded bg-zinc-900/60 border border-[#232630] text-zinc-300">
                             <span className="text-amber-400 font-semibold mr-1.5">[{iss.category || 'layout'}]</span>
                             {iss.description}
                           </div>
@@ -819,7 +819,7 @@ export default function ProjectDetailPage() {
                   <div className="pt-2 border-t border-emerald-900/40 space-y-1.5">
                     <div className="text-[11px] text-zinc-400 font-semibold">Kịch bản đã tự động sinh & chạy:</div>
                     {auditResult.test_runs.map((r) => (
-                      <div key={r.id} className="flex items-center justify-between p-2 rounded bg-zinc-900/60 border border-zinc-800 text-[11px]">
+                      <div key={r.id} className="flex items-center justify-between p-2 rounded bg-zinc-900/60 border border-[#232630] text-[11px]">
                         <span className="text-zinc-200">{r.name}</span>
                         <div className="flex items-center gap-2">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] ${
@@ -843,7 +843,7 @@ export default function ProjectDetailPage() {
           {/* 2-Column Grid: Source Path & Dev Server */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Card 1: Local Source Path & AST Inspector */}
-            <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+            <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                   <FolderGit2 className="h-4 w-4 text-blue-400" />
@@ -862,7 +862,7 @@ export default function ProjectDetailPage() {
                     value={sourcePathInput}
                     onChange={(e) => setSourcePathInput(e.target.value)}
                     placeholder="e.g. D:\code\my-app or /home/user/app"
-                    className="flex-1 rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                    className="flex-1 rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                   />
                   <button
                     onClick={handleSaveSourcePath}
@@ -888,11 +888,11 @@ export default function ProjectDetailPage() {
                 </div>
               )}
 
-              <div className="pt-2 flex items-center justify-between border-t border-zinc-800">
+              <div className="pt-2 flex items-center justify-between border-t border-[#232630]">
                 <button
                   onClick={handleScanSource}
                   disabled={scanningSource || !project.source_code_path}
-                  className="px-3.5 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+                  className="px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 text-xs font-mono font-medium flex items-center gap-1.5 transition active:scale-[0.98] disabled:opacity-50"
                 >
                   <Code className={`h-3.5 w-3.5 ${scanningSource ? "animate-spin" : ""}`} />
                   <span>{scanningSource ? "Đang phân tích AST..." : "Quét Mã Nguồn (AST Scan)"}</span>
@@ -907,7 +907,7 @@ export default function ProjectDetailPage() {
 
               {/* Scanned Details */}
               {scanResult && (
-                <div className="space-y-3 pt-3 border-t border-zinc-800">
+                <div className="space-y-3 pt-3 border-t border-[#232630]">
                   <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
                     <span className="text-zinc-400">Frameworks:</span>
                     {((scanResult.detected_frameworks?.length ? scanResult.detected_frameworks : scanResult.frameworks?.map(f => typeof f === 'string' ? f : f.name)) || []).map((fw) => (
@@ -927,7 +927,7 @@ export default function ProjectDetailPage() {
                     <div className="text-[11px] font-mono text-zinc-400 font-semibold">Routes đã phát hiện:</div>
                     <div className="max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]">
                       {(scanResult.routes || []).map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[#0e0f12] border border-zinc-800/80">
+                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[#0e0f12] border border-[#232630]/80">
                           <span className="text-zinc-200">{r.path}</span>
                           <span className="text-[10px] text-zinc-500">{r.type || (r as any).route_type}</span>
                         </div>
@@ -939,7 +939,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Card 2: Mode B Autonomous Dev Server Controller */}
-            <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
+            <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
                   <Server className="h-4 w-4 text-zinc-300" />
@@ -963,7 +963,7 @@ export default function ProjectDetailPage() {
                     value={customCommand}
                     onChange={(e) => setCustomCommand(e.target.value)}
                     placeholder="e.g. npm run dev"
-                    className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -973,7 +973,7 @@ export default function ProjectDetailPage() {
                     value={customPort}
                     onChange={(e) => setCustomPort(e.target.value)}
                     placeholder="e.g. 3000"
-                    className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-1.5 text-xs text-zinc-200 focus:border-purple-500 focus:outline-none"
+                    className="w-full rounded-lg border border-[#232630] bg-[#0c0d10] px-3 py-1.5 text-xs text-zinc-200 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
                   />
                 </div>
               </div>
@@ -992,7 +992,7 @@ export default function ProjectDetailPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
+              <div className="flex items-center gap-2 pt-2 border-t border-[#232630]">
                 {!devServer?.is_running ? (
                   <button
                     onClick={handleStartDevServer}
@@ -1019,8 +1019,8 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Dev Server Log Terminal */}
-              <div className="rounded-lg border border-zinc-800 bg-[#0a0a0c] overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-mono text-zinc-400">
+              <div className="rounded-lg border border-[#232630] bg-[#0c0d10] overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border-b border-[#232630] text-[10px] font-mono text-zinc-400">
                   <Terminal className="h-3 w-3 text-zinc-300" />
                   <span>Dev Server Output Terminal</span>
                 </div>
@@ -1037,7 +1037,7 @@ export default function ProjectDetailPage() {
       {activeTab === "discovery" && (
         <div className="space-y-6">
           {/* Action & Trigger Card */}
-          <div className="rounded-xl border border-zinc-800 bg-[#121316] p-5 space-y-4 shadow-sm">
+          <div className="rounded-xl border border-[#232630] bg-[#13151b] p-5 space-y-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
@@ -1078,11 +1078,11 @@ export default function ProjectDetailPage() {
             )}
 
             {crawling && (
-              <div className="rounded-lg border border-purple-500/40 bg-purple-950/30 p-4 text-xs font-mono text-zinc-700 flex items-center gap-3 animate-pulse">
+              <div className="rounded-lg border border-sky-500/30 bg-sky-950/20 p-4 text-xs font-mono text-sky-200 flex items-center gap-3 animate-pulse">
                 <RefreshCw className="h-5 w-5 animate-spin text-zinc-300 shrink-0" />
                 <div>
                   <div className="font-semibold">Đang khám phá website bằng Playwright...</div>
-                  <div className="text-[11px] text-purple-300/80 mt-0.5">
+                  <div className="text-[11px] text-sky-300/80 mt-0.5">
                     Hệ thống đang mở trình duyệt ngầm, phân tích DOM, dò tìm form và kiểm tra HTTP status...
                   </div>
                 </div>
@@ -1095,8 +1095,8 @@ export default function ProjectDetailPage() {
             <div className="space-y-6">
               {/* Stat Cards */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-zinc-300">
+                <div className="rounded-xl border border-[#232630] bg-[#13151b] p-4 flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-zinc-900 border border-[#232630] text-zinc-300">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
@@ -1109,7 +1109,7 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
+                <div className="rounded-xl border border-[#232630] bg-[#13151b] p-4 flex items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
                     <Bug className="h-5 w-5" />
                   </div>
@@ -1123,7 +1123,7 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
+                <div className="rounded-xl border border-[#232630] bg-[#13151b] p-4 flex items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                     <Layers className="h-5 w-5" />
                   </div>
@@ -1157,14 +1157,14 @@ export default function ProjectDetailPage() {
                     {discoveryReport.suggested_tests_json.map((st, idx) => (
                       <div
                         key={idx}
-                        className="rounded-xl border border-zinc-800/80 bg-[#121216] p-4 flex flex-col justify-between gap-4 hover:border-purple-500/40 transition"
+                        className="rounded-xl border border-[#232630]/80 bg-[#13151b] p-4 flex flex-col justify-between gap-4 hover:border-zinc-700 transition"
                       >
                         <div className="space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <span className="font-mono text-sm font-semibold text-zinc-200">
                               {st.name}
                             </span>
-                            <span className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/50">
+                            <span className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/60">
                               {st.steps.length} actions
                             </span>
                           </div>
@@ -1194,12 +1194,12 @@ export default function ProjectDetailPage() {
                           </div>
                         </div>
 
-                        <div className="pt-3 border-t border-zinc-800/80 flex justify-end">
+                        <div className="pt-3 border-t border-[#232630]/80 flex justify-end">
                           <button
                             type="button"
                             disabled={savingTestIdx === idx}
                             onClick={() => handleSaveDiscoveredTest(st, idx)}
-                            className="px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 text-xs font-mono font-medium flex items-center gap-1.5 transition active:scale-[0.98] disabled:opacity-50"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             <span>{savingTestIdx === idx ? "Đang thêm..." : "Thêm vào Test Cases"}</span>
@@ -1218,10 +1218,10 @@ export default function ProjectDetailPage() {
                   <span>Danh sách các trang đã &quot;bò&quot; và kiểm tra ({discoveryReport.pages_count})</span>
                 </h4>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
+                <div className="rounded-xl border border-[#232630] bg-[#13151b] overflow-hidden">
                   <table className="w-full text-left text-xs font-mono">
                     <thead>
-                      <tr className="border-b border-zinc-800 text-zinc-400 bg-[#141418]">
+                      <tr className="border-b border-[#232630] text-zinc-400 bg-[#141418]">
                         <th className="py-2.5 px-4 font-medium">Đường dẫn (Path)</th>
                         <th className="py-2.5 px-4 font-medium">Tiêu đề (Title)</th>
                         <th className="py-2.5 px-4 font-medium">HTTP Status</th>
@@ -1263,7 +1263,7 @@ export default function ProjectDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-zinc-800/80 bg-[#0c0c0e] p-8 text-center space-y-3">
+            <div className="rounded-xl border border-[#232630]/80 bg-[#0c0c0e] p-8 text-center space-y-3">
               <Compass className="h-8 w-8 text-zinc-600 mx-auto" />
               <div className="text-sm font-medium text-zinc-300">
                 Chưa có báo cáo khám phá website
@@ -1284,7 +1284,7 @@ export default function ProjectDetailPage() {
         description="Cấu hình tài khoản đăng nhập hoặc Bearer token để Playwright tự động vượt qua login wall khi audit các trang admin/dashboard."
       >
         <div className="space-y-4">
-          <div className="space-y-3 p-3.5 rounded-lg border border-zinc-800 bg-[#0a0a0c]">
+          <div className="space-y-3 p-3.5 rounded-lg border border-[#232630] bg-[#0c0d10]">
             <div className="text-xs font-semibold text-zinc-200 font-mono flex items-center gap-1.5">
               <KeyRound className="h-4 w-4 text-amber-400" />
               <span>Tự Động Đăng Nhập (Pre-flight Auto-Login)</span>
@@ -1297,7 +1297,7 @@ export default function ProjectDetailPage() {
                   value={authLoginUrl}
                   onChange={(e) => setAuthLoginUrl(e.target.value)}
                   placeholder="/admin/login or /login"
-                  className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  className="w-full rounded border border-[#232630] bg-[#13151b] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
                 />
               </div>
 
@@ -1309,7 +1309,7 @@ export default function ProjectDetailPage() {
                     value={authUsername}
                     onChange={(e) => setAuthUsername(e.target.value)}
                     placeholder="admin or user@domain.com"
-                    className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    className="w-full rounded border border-[#232630] bg-[#13151b] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
                   />
                 </div>
                 <div>
@@ -1319,7 +1319,7 @@ export default function ProjectDetailPage() {
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                    className="w-full rounded border border-[#232630] bg-[#13151b] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
                   />
                 </div>
               </div>
@@ -1331,13 +1331,13 @@ export default function ProjectDetailPage() {
                   value={authSubmitSelector}
                   onChange={(e) => setAuthSubmitSelector(e.target.value)}
                   placeholder="button[type='submit']"
-                  className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-purple-500"
+                  className="w-full rounded border border-[#232630] bg-[#13151b] px-3 py-1.5 text-zinc-200 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
                 />
               </div>
             </div>
           </div>
 
-          <div className="space-y-2 p-3.5 rounded-lg border border-zinc-800 bg-[#0a0a0c]">
+          <div className="space-y-2 p-3.5 rounded-lg border border-[#232630] bg-[#0c0d10]">
             <div className="text-xs font-semibold text-zinc-200 font-mono flex items-center gap-1.5">
               <Lock className="h-4 w-4 text-zinc-300" />
               <span>HTTP Authorization Token (Bearer Token Injection)</span>
@@ -1349,7 +1349,7 @@ export default function ProjectDetailPage() {
                 value={authBearerToken}
                 onChange={(e) => setAuthBearerToken(e.target.value)}
                 placeholder="Bearer eyJhbGciOi..."
-                className="w-full rounded border border-zinc-800 bg-[#121216] px-3 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none focus:border-purple-500"
+                className="w-full rounded border border-[#232630] bg-[#13151b] px-3 py-1.5 text-zinc-200 font-mono text-xs focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30"
               />
             </div>
           </div>
@@ -1361,7 +1361,7 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#232630]">
             <button
               type="button"
               onClick={() => setAuthModalOpen(false)}
@@ -1373,7 +1373,7 @@ export default function ProjectDetailPage() {
               type="button"
               onClick={handleSaveAuthProfile}
               disabled={savingAuth}
-              className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-xs font-mono font-medium text-white transition disabled:opacity-50"
+              className="px-4 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-mono font-semibold text-zinc-950 transition active:scale-[0.98] disabled:opacity-50 shadow-sm"
             >
               {savingAuth ? "Đang lưu..." : "Lưu Cấu Hình Auth"}
             </button>

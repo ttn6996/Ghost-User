@@ -82,7 +82,7 @@ export default function TestCasesPage() {
 
         <Link
           href="/tests/new"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-semibold text-zinc-950 transition-all active:scale-[0.98] shadow-sm"
         >
           <Plus className="h-4 w-4" />
           <span>New Test Case</span>
@@ -95,7 +95,7 @@ export default function TestCasesPage() {
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="rounded-lg border border-zinc-800 bg-[#0f0f12] px-3 py-1.5 text-xs font-mono text-zinc-300 focus:border-purple-500 focus:outline-none"
+          className="rounded-lg border border-[#232630] bg-[#13151b] px-3 py-1.5 text-xs font-mono text-zinc-300 focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 focus:outline-none"
         >
           <option value="">All Projects</option>
           {projects.map((p) => (
@@ -108,12 +108,12 @@ export default function TestCasesPage() {
 
       {/* Table */}
       {loading ? (
-        <div className="h-64 bg-zinc-900/40 border border-zinc-800 rounded-xl animate-pulse"></div>
+        <div className="h-64 bg-zinc-900/40 border border-[#232630] rounded-xl animate-pulse"></div>
       ) : testCases.length > 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] overflow-hidden">
+        <div className="rounded-xl border border-[#232630] bg-[#13151b] overflow-hidden">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-zinc-800 text-zinc-400 font-mono bg-[#141418]">
+              <tr className="border-b border-[#232630] text-zinc-400 font-mono bg-[#0f1116]">
                 <th className="py-3 px-4 font-medium">Test Name</th>
                 <th className="py-3 px-4 font-medium">Project</th>
                 <th className="py-3 px-4 font-medium">Step Count</th>
@@ -132,7 +132,7 @@ export default function TestCasesPage() {
                       </div>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-purple-400">
+                  <td className="py-3 px-4 text-zinc-300">
                     <Link href={`/projects/${tc.project_id}`} className="hover:underline">
                       {getProjectName(tc.project_id)}
                     </Link>
@@ -152,7 +152,7 @@ export default function TestCasesPage() {
                       <button
                         onClick={() => handleRun(tc.id)}
                         disabled={runningId === tc.id}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30 text-xs transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800/90 border border-zinc-700/80 text-zinc-200 hover:bg-zinc-700 hover:text-white text-xs font-medium transition-all active:scale-[0.98]"
                       >
                         <Play className="h-3 w-3 fill-current" />
                         <span>{runningId === tc.id ? "Queuing..." : "Run"}</span>
