@@ -82,3 +82,60 @@ def test_autonomous_audit_mocked_execution(client: TestClient, db_session: Sessi
         assert len(data["test_runs"]) == 1
         assert data["discovery_report_id"] is not None
         assert "Autonomous audit finished" in data["audit_summary"]
+
+def test_autonomous_audit_with_directive_prompt(client: TestClient, db_session: Session, tmp_path):
+    source_dir = tmp_path / "directive_app"
+    source_dir.mkdir()
+    (source_dir / "package.json").write_text('{"scripts": {"dev": "vite"}}', encoding="utf-8")
+
+    project = Project(
+        name="Directive Project",
+        base_url="http://127.0.0.1:3000",
+        source_code_path=str(source_dir),
+        allow_local_loopback=True,
+    )
+    db_session.add(project)
+    db_session.commit()
+    db_session.refresh(project)
+
+    mock_crawl_result = {
+        "base_url": "http://127.0.0.1:3000",
+        "pages_count": 2,
+        "broken_links_count": 0,
+        "forms_count": 1,
+        "pages": [{"url": "http://127.0.0.1:3000/login", "path": "/login", "title": "Login", "status_code": 200}],
+        "broken_links": [],
+        "forms": [],
+        "console_errors": [],
+        "suggested_tests": [],
+    }
+
+    mock_server_info = DevServerInfo(
+        project_id=project.id,
+        local_path=str(source_dir),
+        command="npm run dev",
+        target_url="http://127.0.0.1:3000",
+        port=3000,
+        is_running=True,
+    )
+
+    with patch("apps.worker.runner.crawler.WebCrawler.crawl", return_value=mock_crawl_result), \
+         patch("apps.worker.runner.engine.BrowserExecutionEngine.execute_run", return_value=RunStatus.PASSED), \
+         patch("app.services.dev_server.DevServerRunner.get_status", return_value=mock_server_info):
+
+        prompt_text = "audit, test hệ thống, với tài khoản khách hàng: user01/admin123; tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd!"
+        response = client.post(
+            f"/api/v1/projects/{project.id}/autonomous-audit",
+            json={"directive_prompt": prompt_text, "auto_start_server": False},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["directive_prompt"] == prompt_text
+        assert len(data["extracted_accounts"]) == 2
+        usernames = [a["username"] for a in data["extracted_accounts"]]
+        assert "user01" in usernames
+        assert "admin@campushub.com" in usernames
+        # Both directive login tests must be generated and executed
+        assert data["tests_executed_count"] == 2
+        assert data["tests_passed_count"] == 2
+

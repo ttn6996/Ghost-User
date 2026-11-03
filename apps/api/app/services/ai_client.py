@@ -588,3 +588,117 @@ Respond STRICTLY in valid JSON format:
             "issues": [],
             "ux_recommendations": ["Visual inspection completed without anomalies."],
         }
+    @classmethod
+    def _regex_parse_directive(cls, prompt: str, available_routes: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Extracts accounts, roles, and focus areas using resilient regex when AI is not configured or offline."""
+        import re
+        cred_pattern = re.compile(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+|[a-zA-Z0-9_-]{3,})[:/]([^\s,;]+)')
+        matches = cred_pattern.findall(prompt)
+
+        accounts = []
+        lower_prompt = prompt.lower()
+        for idx, (u, p) in enumerate(matches, start=1):
+            pos = prompt.find(u)
+            preceding_context = lower_prompt[max(0, pos - 40):pos]
+            if "admin" in preceding_context or "admin" in u.lower():
+                role = "admin"
+                label = f"Quản trị viên ({u})"
+            elif any(k in preceding_context for k in ("khách", "customer", "user", "khach hang")):
+                role = "customer"
+                label = f"Khách hàng ({u})"
+            else:
+                role = "user"
+                label = f"Tài khoản {idx} ({u})"
+
+            accounts.append({
+                "role": role,
+                "username": u.strip(),
+                "password": p.strip(),
+                "label": label,
+            })
+
+        focus_areas = []
+        for kw in ["admin", "login", "portal", "device", "thiết bị", "incident", "dns", "khách hàng", "user"]:
+            if kw in lower_prompt and kw not in focus_areas:
+                focus_areas.append(kw)
+
+        login_paths = []
+        if available_routes:
+            for r in available_routes:
+                if any(k in r.lower() for k in ("login", "signin", "auth", "portal")):
+                    if r not in login_paths:
+                        login_paths.append(r)
+
+        return {
+            "accounts": accounts,
+            "focus_areas": focus_areas,
+            "login_paths": login_paths,
+            "instructions": prompt.strip(),
+        }
+
+    @classmethod
+    def parse_audit_directive(
+        cls,
+        directive_prompt: str,
+        base_url: str = "",
+        available_routes: Optional[List[str]] = None,
+        provider: str = "gemini",
+        base_url_ai: Optional[str] = None,
+        api_keys: Optional[List[str]] = None,
+        model: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Parses natural language directive prompt into structured test accounts and scope."""
+        if not directive_prompt or not directive_prompt.strip():
+            return {"accounts": [], "focus_areas": [], "login_paths": [], "instructions": ""}
+
+        clean_prompt = directive_prompt.strip()
+
+        # Try AI LLM parsing if keys/provider available
+        if api_keys or provider:
+            try:
+                extraction_prompt = f"""You are an elite QA Automation AI.
+The user gave a natural language instruction for auditing and testing a web application at {base_url}:
+"{clean_prompt}"
+
+Available detected routes: {available_routes or []}
+
+Extract credentials and scope. Output STRICTLY valid JSON with:
+{{
+  "accounts": [
+    {{
+      "role": "admin | customer | user",
+      "username": "...",
+      "password": "...",
+      "label": "..."
+    }}
+  ],
+  "focus_areas": ["..."],
+  "login_paths": ["..."],
+  "instructions": "..."
+}}
+"""
+                raw = cls.chat_completion(
+                    messages=[
+                        {"role": "system", "content": "You are a structured data extraction engine. Always output valid JSON."},
+                        {"role": "user", "content": extraction_prompt}
+                    ],
+                    provider=provider,
+                    base_url=base_url_ai,
+                    api_keys=api_keys,
+                    model=model,
+                    temperature=0.1,
+                    max_tokens=600,
+                )
+                clean_json = raw.strip()
+                if "```json" in clean_json:
+                    clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+                elif "```" in clean_json:
+                    clean_json = clean_json.split("```")[1].split("```")[0].strip()
+                data = json.loads(clean_json)
+                if isinstance(data, dict) and "accounts" in data:
+                    return data
+            except Exception as e:
+                logger.info(f"AI directive extraction falling back to resilient regex: {e}")
+
+        return cls._regex_parse_directive(clean_prompt, available_routes)
+

@@ -101,6 +101,7 @@ export default function ProjectDetailPage() {
   const [auditing, setAuditing] = useState(false);
   const [auditResult, setAuditResult] = useState<AutonomousAuditResponse | null>(null);
   const [auditError, setAuditError] = useState<string | null>(null);
+  const [directivePrompt, setDirectivePrompt] = useState("");
 
   const loadData = async () => {
     try {
@@ -304,6 +305,7 @@ export default function ProjectDetailPage() {
         auto_start_server: true,
         max_pages: 15,
         run_form_tests: true,
+        directive_prompt: directivePrompt.trim() || undefined,
       });
       setAuditResult(res);
       // Reload project test cases & discovery report
@@ -639,6 +641,64 @@ export default function ProjectDetailPage() {
               </button>
             </div>
 
+            {/* Directive Prompt Input Box */}
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
+                  Mô tả chỉ thị test &amp; Tài khoản kiểm thử (Directive Prompt)
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-zinc-500 font-mono">
+                    AI Auto-Extraction
+                  </span>
+                  {directivePrompt && (
+                    <button
+                      type="button"
+                      onClick={() => setDirectivePrompt("")}
+                      className="text-[10px] text-zinc-400 hover:text-zinc-200 underline font-mono"
+                    >
+                      Xóa chỉ thị
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <textarea
+                value={directivePrompt}
+                onChange={(e) => setDirectivePrompt(e.target.value)}
+                placeholder="Ví dụ: audit, test hệ thống, với tài khoản khách hàng: user01/admin123, user02/admin123; tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Hãy kiểm tra các trang quản trị, form và luồng thao tác."
+                rows={3}
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900/90 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition font-mono leading-relaxed"
+              />
+
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="text-zinc-500 font-mono text-[10px]">Gợi ý nhanh:</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDirectivePrompt(
+                      "audit, test hệ thống, với tài khoản khách hàng: user01/admin123, user02/admin123; tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Tự động crawl toàn bộ trang và thử nghiệm luồng nghiệp vụ."
+                    )
+                  }
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] transition"
+                >
+                  + Khách hàng (user01/02) &amp; Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDirectivePrompt(
+                      "Kiểm tra bảo mật và phân quyền với tài khoản admin: admin@campushub.com/StrongAdminP@ssw0rd! Tập trung audit các trang /admin, thiết bị và cấu hình hệ thống."
+                    )
+                  }
+                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px] transition"
+                >
+                  + Audit trang Quản trị (Admin only)
+                </button>
+              </div>
+            </div>
+
             {auditing && (
               <div className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-4 text-xs font-mono text-zinc-700 flex items-center gap-3 animate-pulse">
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-300 shrink-0" />
@@ -683,6 +743,44 @@ export default function ProjectDetailPage() {
                     <span className="text-emerald-400 font-semibold">{auditResult.tests_passed_count} / {auditResult.tests_executed_count}</span>
                   </div>
                 </div>
+
+                {/* Extracted Accounts from Directive Prompt */}
+                {auditResult.extracted_accounts && auditResult.extracted_accounts.length > 0 && (
+                  <div className="p-3 rounded-lg border border-zinc-800 bg-zinc-900/80 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-semibold text-zinc-200">
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Tài khoản tự động nhận diện &amp; kiểm thử ({auditResult.extracted_accounts.length})</span>
+                      </div>
+                      {auditResult.focus_areas && auditResult.focus_areas.length > 0 && (
+                        <div className="text-[10px] text-zinc-400 font-normal">
+                          Mục tiêu: {auditResult.focus_areas.join(", ")}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+                      {auditResult.extracted_accounts.map((acc, idx) => (
+                        <div key={idx} className="p-2 rounded border border-zinc-800/80 bg-zinc-950/60 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-zinc-200 truncate">{acc.username}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono uppercase font-semibold ${
+                              (acc.role || "").toLowerCase() === "admin" 
+                                ? "bg-amber-500/10 text-amber-300 border border-amber-500/20" 
+                                : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                            }`}>
+                              {acc.role || "user"}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-zinc-500 flex items-center justify-between">
+                            <span>Mật khẩu: {acc.password ? "••••••••" : "(trống)"}</span>
+                            <span className="text-zinc-400">{acc.target_route || "/login"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Visual QA Multimodal Report */}
                 {auditResult.visual_qa_report && (

@@ -92,7 +92,7 @@ export const api = {
     }),
   getDevServerStatus: (projectId: string) =>
     request<DevServerInfo>(`/api/v1/projects/${projectId}/dev-server/status`),
-  runAutonomousAudit: (projectId: string, data?: { auto_start_server?: boolean; max_pages?: number; run_form_tests?: boolean }) =>
+  runAutonomousAudit: (projectId: string, data?: { auto_start_server?: boolean; max_pages?: number; run_form_tests?: boolean; directive_prompt?: string }) =>
     request<AutonomousAuditResponse>(`/api/v1/projects/${projectId}/autonomous-audit`, {
       method: "POST",
       body: JSON.stringify(data || {}),

@@ -83,6 +83,23 @@ class AutonomousAuditService:
             except Exception as e:
                 logger.warning(f"Could not auto-start dev server: {e}")
 
+        # 2.5 Directive Prompt Parsing (Natural Language Test Directive)
+        directive_data: Dict[str, Any] = {"accounts": [], "focus_areas": [], "login_paths": [], "instructions": ""}
+        ai_setting = self.db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
+        pool = ai_setting.api_keys_json if (ai_setting and ai_setting.api_keys_json) else ([ai_setting.api_key] if (ai_setting and ai_setting.api_key) else [])
+
+        if request.directive_prompt:
+            directive_data = AIClientService.parse_audit_directive(
+                directive_prompt=request.directive_prompt,
+                base_url=project.base_url,
+                available_routes=static_routes,
+                provider=ai_setting.provider if ai_setting else "gemini",
+                base_url_ai=ai_setting.base_url if ai_setting else None,
+                api_keys=pool,
+                model=ai_setting.model if ai_setting else None,
+            )
+            logger.info(f"Directive prompt parsed: {len(directive_data.get('accounts', []))} accounts found: {directive_data.get('accounts')}")
+
         # 3. Seeded Live UI Crawl & Discovery
         # Filter static routes to valid web paths
         seed_paths = [r for r in static_routes if r.startswith("/") and not r.startswith("/api/")]
@@ -114,15 +131,67 @@ class AutonomousAuditService:
         self.db.commit()
         self.db.refresh(discovery_report)
 
-        # 4. Auto-Generate & Execute UI Tests
+        # 4. Directive & Auto-Generated UI Tests
         executed_runs: List[Dict[str, Any]] = []
         passed_count = 0
         failed_count = 0
 
-        if request.run_form_tests and crawl_result.get("suggested_tests"):
+        # Synthesize persona login tests from directive prompt accounts
+        directive_tests: List[Dict[str, Any]] = []
+        if directive_data.get("accounts"):
+            for acc in directive_data["accounts"]:
+                username = acc.get("username", "")
+                password = acc.get("password", "")
+                role = acc.get("role", "user")
+                label = acc.get("label", f"{role}: {username}")
+
+                # Choose best login route
+                target_route = "/login"
+                if role == "admin":
+                    admin_route = next((r for r in static_routes if "admin" in r.lower() and any(k in r.lower() for k in ("login", "auth", "portal"))), None)
+                    if admin_route:
+                        target_route = admin_route
+                    elif any("admin" in r.lower() for r in static_routes):
+                        target_route = next(r for r in static_routes if "admin" in r.lower())
+                else:
+                    user_route = next((r for r in static_routes if any(k in r.lower() for k in ("login", "signin", "portal", "auth")) and "admin" not in r.lower()), None)
+                    if user_route:
+                        target_route = user_route
+
+                # Default selector heuristics
+                user_sel = 'input[type="text"], input[type="email"], input[name*="user"], input[name*="email"], input[id*="user"]'
+                pass_sel = 'input[type="password"]'
+                submit_sel = 'button[type="submit"], input[type="submit"], button:has-text("Đăng nhập"), button:has-text("Login")'
+
+                for form_info in source_forms:
+                    inputs = form_info.get("inputs", [])
+                    has_pass = any(inp.get("type") == "password" or "pass" in inp.get("name", "").lower() for inp in inputs)
+                    if has_pass:
+                        p_inp = next((inp for inp in inputs if inp.get("type") == "password" or "pass" in inp.get("name", "").lower()), None)
+                        u_inp = next((inp for inp in inputs if inp != p_inp), None)
+                        if p_inp and p_inp.get("name"):
+                            pass_sel = f"input[name='{p_inp['name']}']"
+                        if u_inp and u_inp.get("name"):
+                            user_sel = f"input[name='{u_inp['name']}']"
+                        break
+
+                directive_tests.append({
+                    "name": f"Directive Test: Đăng nhập {label}",
+                    "description": f"Chỉ dẫn tự động: Đăng nhập vai trò {role} bằng tài khoản {username}",
+                    "steps": [
+                        {"action": "goto", "url": f"{project.base_url.rstrip('/')}{target_route}"},
+                        {"action": "wait_for_visible", "selector": user_sel, "timeout_ms": 6000},
+                        {"action": "fill", "selector": user_sel, "value": username},
+                        {"action": "fill", "selector": pass_sel, "value": password},
+                        {"action": "click", "selector": submit_sel},
+                        {"action": "screenshot", "name": f"auth_{role}_{username}"},
+                    ]
+                })
+
+        tests_to_run = directive_tests + (crawl_result.get("suggested_tests", [])[:3] if request.run_form_tests else [])
+
+        if tests_to_run:
             engine = BrowserExecutionEngine(self.db)
-            # Execute up to 3 high-value discovered tests
-            tests_to_run = crawl_result["suggested_tests"][:3]
 
             for test_def in tests_to_run:
                 test_name = test_def.get("name", "Auto-Discovery Test")
@@ -214,7 +283,12 @@ class AutonomousAuditService:
             except Exception as v_err:
                 logger.warning(f"Visual QA analysis skipped: {v_err}")
 
-        summary_msg = (
+        prefix_msg = ""
+        if request.directive_prompt and directive_data.get("accounts"):
+            acc_list = ", ".join(a.get("username", "") for a in directive_data["accounts"])
+            prefix_msg = f"[Chỉ dẫn AI Prompt] Đã phân tích và thực thi với {len(directive_data['accounts'])} tài khoản ({acc_list}). "
+
+        summary_msg = prefix_msg + (
             f"Autonomous audit finished. Inspected {len(crawl_result.get('pages', []))} live pages, "
             f"{len(static_routes)} static routes. Found {crawl_result.get('broken_links_count', 0)} broken links, "
             f"{crawl_result.get('forms_count', 0)} forms. Executed {len(executed_runs)} automated test runs "
@@ -241,4 +315,7 @@ class AutonomousAuditService:
             discovery_report_id=discovery_report.id,
             audit_summary=summary_msg,
             visual_qa_report=visual_qa_report,
+            directive_prompt=request.directive_prompt,
+            extracted_accounts=directive_data.get("accounts", []),
+            focus_areas=directive_data.get("focus_areas", []),
         )

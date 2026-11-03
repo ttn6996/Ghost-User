@@ -221,6 +221,7 @@ class AutonomousAuditRequest(BaseModel):
     auto_start_server: bool = Field(default=True, description="Whether to start local dev server if not running")
     max_pages: int = Field(default=15, ge=1, le=30, description="Max pages to crawl and inspect")
     run_form_tests: bool = Field(default=True, description="Whether to generate and execute UI form tests")
+    directive_prompt: Optional[str] = Field(default=None, description="Natural language prompt containing test goals, account credentials, and scope")
 
 
 class AutonomousAuditResponse(BaseModel):
@@ -243,3 +244,6 @@ class AutonomousAuditResponse(BaseModel):
     discovery_report_id: Optional[str] = None
     audit_summary: str = ""
     visual_qa_report: Optional[Dict[str, Any]] = None
+    directive_prompt: Optional[str] = None
+    extracted_accounts: List[Dict[str, Any]] = Field(default_factory=list)
+    focus_areas: List[str] = Field(default_factory=list)

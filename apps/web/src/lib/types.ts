@@ -245,6 +245,9 @@ export interface AutonomousAuditResponse {
   }[];
   discovery_report_id?: string;
   audit_summary: string;
+  directive_prompt?: string;
+  extracted_accounts?: { role?: string; username: string; password?: string; label?: string; target_route?: string }[];
+  focus_areas?: string[];
   visual_qa_report?: {
     page_url: string;
     visual_score_out_of_100: number;
