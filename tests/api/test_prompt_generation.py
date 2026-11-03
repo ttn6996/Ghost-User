@@ -100,3 +100,47 @@ def test_generate_journey_negative_login(client: TestClient, db_session: Session
     # Check that error selector is present
     assert_step = next(s for s in data["steps"] if s["action"] == "assert_visible")
     assert "bg-red" in assert_step["selector"] or "alert" in assert_step["selector"]
+
+
+def test_generate_journey_multi_action_rental_and_admin(client: TestClient, db_session: Session):
+    """Generates a complete multi-step journey (login -> rent -> payment -> logout -> admin) without truncation."""
+    project = Project(name="CampusHub", base_url="http://localhost:5173")
+    db_session.add(project)
+    db_session.commit()
+
+    prompt = (
+        "Vào trang login, đăng nhập bằng tài khoản user01 và mật khẩu admin123, "
+        "sau đó thuê 1 giáo trình trong vòng 5 ngày, giả lập thanh toán. "
+        "tiếp theo đăng xuất rồi sang trang admin(login với tài khoản admin/admin123), xong kiểm tra xem ok chưa"
+    )
+    res = client.post(
+        "/api/v1/test-cases/generate",
+        json={"project_id": project.id, "prompt": prompt},
+    )
+    assert res.status_code == 200
+    data = res.json()
+
+    # Must contain all multi-step phases, not stopping at 6 login steps
+    assert len(data["steps"]) >= 10
+    actions = [s["action"] for s in data["steps"]]
+    assert "goto" in actions
+    assert "fill" in actions
+    assert "click" in actions
+    assert "screenshot" in actions
+
+    # Must capture user01, admin, and duration 5
+    fill_values = [s.get("value") for s in data["steps"] if s["action"] == "fill"]
+    assert "user01" in fill_values
+    assert "admin123" in fill_values
+    assert "5" in fill_values
+    assert "admin" in fill_values
+
+    # Checkpoints
+    screenshots = [s.get("name") for s in data["steps"] if s["action"] == "screenshot"]
+    assert "login_success" in screenshots
+    assert "rental_configured" in screenshots
+    assert "payment_completed" in screenshots
+    assert "admin_dashboard_verified" in screenshots
+
+    # Verify strict TestDefinition schema compliance
+    TestDefinition.model_validate({"name": data["suggested_name"], "steps": data["steps"]})

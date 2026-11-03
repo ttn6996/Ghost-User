@@ -1,3 +1,7 @@
+from app.db.models import AISetting
+from app.services.ai_client import AIClientService
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 """Natural Language Prompt-to-Journey Generator for Ghost-User.
 
 Translates high-level user instructions (in Vietnamese or English) into validated,
@@ -29,7 +33,13 @@ logger = logging.getLogger("ghost-user")
 class PromptGenerator:
     """Generates executable Ghost-User test journeys from natural language instructions."""
 
-    def __init__(self, gemini_api_key: Optional[str] = None, openai_api_key: Optional[str] = None):
+    def __init__(
+        self,
+        db: Optional[Session] = None,
+        gemini_api_key: Optional[str] = None,
+        openai_api_key: Optional[str] = None,
+    ):
+        self.db = db
         self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY") or getattr(settings, "GEMINI_API_KEY", None)
         self.openai_api_key = openai_api_key or os.environ.get("OPENAI_API_KEY") or getattr(settings, "OPENAI_API_KEY", None)
 
@@ -38,6 +48,7 @@ class PromptGenerator:
         prompt: str,
         base_url: str,
         page_path: Optional[str] = None,
+        db: Optional[Session] = None,
     ) -> Dict[str, Any]:
         """Generate test journey from natural language prompt."""
         cleaned_prompt = prompt.strip()
@@ -47,7 +58,28 @@ class PromptGenerator:
         # Optional DOM element discovery from live target
         live_selectors = await self._probe_live_dom(base_url, page_path, cleaned_prompt)
 
-        # 1. Try LLM if configured
+        # 1. First Priority: Use configured AI Settings from DB (Multi-Provider, Model, Key Rotation)
+        target_db = db or self.db
+        if target_db:
+            try:
+                ai_setting = target_db.execute(select(AISetting).order_by(AISetting.created_at.desc())).scalars().first()
+                if ai_setting and ai_setting.enabled:
+                    pool = ai_setting.api_keys_json if ai_setting.api_keys_json else ([ai_setting.api_key] if ai_setting.api_key else [])
+                    ai_result = self._generate_with_ai_client(
+                        prompt=cleaned_prompt,
+                        base_url=base_url,
+                        live_selectors=live_selectors,
+                        provider=ai_setting.provider,
+                        base_url_ai=ai_setting.base_url,
+                        api_keys=pool,
+                        model=ai_setting.model,
+                    )
+                    if ai_result and self._validate_steps(ai_result.get("steps", [])):
+                        return ai_result
+            except Exception as e:
+                logger.warning(f"AISetting prompt-to-journey fallback triggered: {e}")
+
+        # 2. Try LLM from environment variables if configured
         if self.gemini_api_key:
             try:
                 result = await self._generate_with_gemini(cleaned_prompt, base_url, live_selectors)
@@ -202,8 +234,42 @@ class PromptGenerator:
                     "selector": "nav, header, [data-testid='user-menu'], body",
                 })
                 steps.append({"action": "screenshot", "name": "login_success"})
-                name = f"Authentication Journey ({user_val or 'user01'})"
-                desc = f"Submits credentials for {user_val or 'user01'} and verifies authorized session access."
+                has_subsequent = any(k in p_lower for k in ["thuê", "rent", "mua", "buy", "thanh toán", "quản trị"]) or bool(re.search(r'\badmin\b', prompt, re.IGNORECASE))
+                if has_subsequent:
+                    name = f"E2E Journey: Login & Operations ({user_val or 'user01'})"
+                else:
+                    name = f"Authentication Journey ({user_val or 'user01'})"
+                desc = f"Submits credentials for {user_val or 'user01'} and completes requested user flow."
+
+                # Multi-flow expansion: Renting, Buying, Payment, Logout, Admin checks
+                if any(k in p_lower for k in ["thuê", "rent"]):
+                    steps.append({"action": "goto", "url": "/marketplace"})
+                    steps.append({"action": "click", "selector": "button:has-text('Thuê'), a:has-text('Thuê'), .rent-btn"})
+                    days_match = re.search(r'(\d+)\s*(?:ngày|day)', prompt, re.IGNORECASE)
+                    duration = days_match.group(1) if days_match else "5"
+                    steps.append({"action": "fill", "selector": "input[name*='day'], input[name*='duration'], input[type='number']", "value": duration})
+                    steps.append({"action": "screenshot", "name": "rental_configured"})
+
+                if any(k in p_lower for k in ["mua", "buy"]):
+                    steps.append({"action": "goto", "url": "/marketplace"})
+                    steps.append({"action": "click", "selector": "button:has-text('Mua'), a:has-text('Mua'), button:has-text('Buy')"})
+                    steps.append({"action": "screenshot", "name": "item_selected_for_purchase"})
+
+                if any(k in p_lower for k in ["thanh toán", "pay", "checkout"]):
+                    steps.append({"action": "click", "selector": "button:has-text('Thanh toán'), button:has-text('Checkout'), button[type='submit']"})
+                    steps.append({"action": "assert_visible", "selector": "body"})
+                    steps.append({"action": "screenshot", "name": "payment_completed"})
+
+                if any(k in p_lower for k in ["đăng xuất", "logout", "sign out"]):
+                    steps.append({"action": "click", "selector": "button:has-text('Đăng xuất'), a:has-text('Logout'), a[href*='logout']"})
+
+                if ("quản trị" in p_lower or "trang admin" in p_lower or bool(re.search(r'(?:tài khoản|user|role|sang|vào)\s+admin', prompt, re.IGNORECASE))):
+                    steps.append({"action": "goto", "url": "/admin/login"})
+                    steps.append({"action": "fill", "selector": "input[name='username'], input[type='text']", "value": "admin"})
+                    steps.append({"action": "fill", "selector": "input[name='password'], input[type='password']", "value": "admin123"})
+                    steps.append({"action": "click", "selector": "button[type='submit'], button:has-text('Đăng nhập')"})
+                    steps.append({"action": "assert_visible", "selector": "nav, header, body"})
+                    steps.append({"action": "screenshot", "name": "admin_dashboard_verified"})
 
         elif is_search:
             entry_url = "/marketplace" if "/market" in prompt or "chợ" in p_lower else "/"
@@ -299,26 +365,26 @@ class PromptGenerator:
 
     def _extract_user(self, text: str) -> Optional[str]:
         """Extracts username or email from prompt."""
-        # e.g., user01/admin123
-        slash_match = re.search(r'([a-zA-Z0-9_\-\.]+)\s*/\s*([a-zA-Z0-9_!@#$%^&*]+)', text)
-        if slash_match:
-            return slash_match.group(1)
-
-        # Explicit user token like user01, admin, student01
-        word_match = re.search(r'\b(user\d+|admin|student\d+)\b', text, re.IGNORECASE)
-        if word_match:
-            return word_match.group(1)
-
-        # e.g., username "test_user", tài khoản user01
+        # 1. Explicit keyword match: tài khoản X, username X, tên đăng nhập X
         user_match = re.search(
-            r'\b(?:tài khoản|username|tên đăng nhập|email|người dùng)\s*(?:là|:|=|của)?\s*[\'"`]?([a-zA-Z0-9_\-\.@]+)[\'"`]?',
+            r"""\b(?:tài khoản|username|tên đăng nhập|email|người dùng)\s*(?:là|:|=|của|bằng)?\s*['"`]?([a-zA-Z0-9_\-\.]+)[\'"`]?""",
             text,
             re.IGNORECASE,
         )
         if user_match:
             val = user_match.group(1).strip()
-            if val.lower() not in ("đăng", "nhập", "của", "mật"):
+            if val.lower() not in ("đăng", "nhập", "của", "mật", "sai"):
                 return val
+
+        # 2. Slash format: user01/admin123
+        slash_match = re.search(r'([a-zA-Z0-9_\-\.]+)\s*/\s*([a-zA-Z0-9_!@#$%^&*]+)', text)
+        if slash_match:
+            return slash_match.group(1)
+
+        # 3. Explicit user token like user01, admin, student01
+        word_match = re.search(r'\b(user\d+|admin|student\d+)\b', text, re.IGNORECASE)
+        if word_match:
+            return word_match.group(1)
 
         return None
 
@@ -402,6 +468,64 @@ class PromptGenerator:
         name = "Automated Custom Journey"
         desc = f"Generated sequence from user prompt: '{prompt[:80]}...'"
         return steps, name, desc
+
+    def _generate_with_ai_client(
+        self,
+        prompt: str,
+        base_url: str,
+        live_selectors: Dict[str, List[str]],
+        provider: str,
+        base_url_ai: Optional[str],
+        api_keys: List[str],
+        model: Optional[str],
+    ) -> Optional[Dict[str, Any]]:
+        """Generates comprehensive multi-step test journey using AIClientService with key rotation."""
+        target_model = model or "AI Assistant"
+        system_instruction = (
+            "You are an expert Playwright and Ghost-User browser automation engineer. "
+            "Convert the user's requirements into a valid TestDefinition JSON object matching this schema:\n"
+            "{\n"
+            '  "name": "string (concise title)",\n'
+            '  "description": "string (summary of the flow)",\n'
+            '  "steps": [\n'
+            '    {\n'
+            '      "action": "goto | click | fill | select_option | check | uncheck | wait_for_visible | assert_visible | assert_text | assert_url | screenshot",\n'
+            '      "url": "optional string for goto (e.g. /login, /marketplace, /admin)",\n'
+            '      "selector": "optional CSS/Playwright selector for click/fill/assert (e.g. input[name=\'username\'], button:has-text(\'Thuê\'), button:has-text(\'Thanh toán\'))",\n'
+            '      "value": "optional string for fill/select_option",\n'
+            '      "expected_text": "optional string for assert_text",\n'
+            '      "name": "optional string label for screenshot checkpoint"\n'
+            '    }\n'
+            '  ]\n'
+            "}\n"
+            "CRITICAL RULES:\n"
+            "1. Fully generate all actions described by the user (multi-step journeys, switching accounts, rentals, purchases, admin verifications, assertions, and screenshots).\n"
+            "2. NEVER stop at only login if the user asked for subsequent steps (e.g. renting, payment, logout, admin verifications).\n"
+            "3. Return ONLY raw JSON without markdown formatting."
+        )
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Target Base URL: {base_url}\nLive Selectors: {json.dumps(live_selectors)}\nUser Instructions: {prompt}"}
+        ]
+        reply = AIClientService.chat_completion(
+            messages=messages,
+            provider=provider,
+            base_url=base_url_ai,
+            api_keys=api_keys,
+            model=model,
+            temperature=0.2,
+            max_tokens=2500,
+        )
+        clean_reply = re.sub(r'^```(?:json)?\s*', '', reply.strip(), flags=re.MULTILINE)
+        clean_reply = re.sub(r'\s*```$', '', clean_reply.strip(), flags=re.MULTILINE)
+        parsed = json.loads(clean_reply)
+        return {
+            "suggested_name": parsed.get("name", "E2E User Journey"),
+            "suggested_description": parsed.get("description", f"AI Generated via {target_model}"),
+            "steps": parsed.get("steps", []),
+            "model_used": target_model,
+            "explanation": f"AI ({target_model}) đã tự động phân tích và sinh ra {len(parsed.get('steps', []))} bước kiểm thử hoàn chỉnh.",
+        }
 
     async def _generate_with_gemini(
         self, prompt: str, base_url: str, live_selectors: Dict[str, List[str]]

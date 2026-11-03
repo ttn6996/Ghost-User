@@ -35,12 +35,13 @@ async def generate_test_case_from_prompt(
             detail=f"Project '{payload.project_id}' not found",
         )
 
-    generator = PromptGenerator()
+    generator = PromptGenerator(db=db)
     try:
         result = await generator.generate(
             prompt=payload.prompt,
             base_url=project.base_url,
             page_path=payload.page_path,
+            db=db,
         )
         return TestCaseGenerateResponse(**result)
     except Exception as e:
