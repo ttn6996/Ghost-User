@@ -592,12 +592,45 @@ Respond STRICTLY in valid JSON format:
     def _regex_parse_directive(cls, prompt: str, available_routes: Optional[List[str]] = None) -> Dict[str, Any]:
         """Extracts accounts, roles, and focus areas using resilient regex when AI is not configured or offline."""
         import re
-        cred_pattern = re.compile(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+|[a-zA-Z0-9_-]{3,})[:/]([^\s,;]+)')
-        matches = cred_pattern.findall(prompt)
+
+        lower_prompt = prompt.lower()
+        extracted_pairs = []
+        seen = set()
+
+        # 1. Primary: slash-delimited credentials (e.g. user / pass or admin@domain.com/Pass!123)
+        slash_pattern = re.compile(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+|[a-zA-Z0-9_-]{3,})\s*/\s*([^\s,;]+)')
+        for u, p in slash_pattern.findall(prompt):
+            key = (u.strip().lower(), p.strip())
+            if key not in seen:
+                seen.add(key)
+                extracted_pairs.append((u.strip(), p.strip()))
+
+        # 2. Key-value pairs: tk/username: X, mk/password: Y
+        kv_pattern = re.compile(
+            r'(?:tk|tài khoản|username|user)\s*[:=]\s*([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+|[a-zA-Z0-9_-]{3,})\s*[,;]\s*(?:mk|mật khẩu|password|pass)\s*[:=]\s*([^\s,;]+)',
+            re.IGNORECASE
+        )
+        for u, p in kv_pattern.findall(prompt):
+            key = (u.strip().lower(), p.strip())
+            if key not in seen:
+                seen.add(key)
+                extracted_pairs.append((u.strip(), p.strip()))
+
+        # 3. Colon-delimited pairs (excluding common label words like 'admin:', 'user:', 'khách hàng:')
+        LABEL_KEYWORDS = {
+            'admin', 'user', 'khách', 'khach', 'tài khoản', 'tai khoan',
+            'account', 'customer', 'mật khẩu', 'mat khau', 'password', 'pass', 'tk', 'mk'
+        }
+        colon_pattern = re.compile(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+|[a-zA-Z0-9_-]{3,})\s*:\s*([^\s,;]+)')
+        for u, p in colon_pattern.findall(prompt):
+            if u.lower().strip() not in LABEL_KEYWORDS:
+                key = (u.strip().lower(), p.strip())
+                if key not in seen:
+                    seen.add(key)
+                    extracted_pairs.append((u.strip(), p.strip()))
 
         accounts = []
-        lower_prompt = prompt.lower()
-        for idx, (u, p) in enumerate(matches, start=1):
+        for idx, (u, p) in enumerate(extracted_pairs, start=1):
             pos = prompt.find(u)
             preceding_context = lower_prompt[max(0, pos - 40):pos]
             if "admin" in preceding_context or "admin" in u.lower():

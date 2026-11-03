@@ -79,6 +79,7 @@ export default function SettingsPage() {
   // Save State
   const [savingAI, setSavingAI] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const testConnection = async () => {
     try {
@@ -216,9 +217,16 @@ export default function SettingsPage() {
       }
       setAiApiKey("");
       setSaveSuccess(true);
+      setSaveError(null);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err: any) {
-      alert(`Lưu cấu hình AI thất bại: ${err.message}`);
+      const msg = err.message || "";
+      if (msg.includes("Failed to fetch")) {
+        setSaveError("Không thể kết nối Backend FastAPI (http://127.0.0.1:8000). Vui lòng kiểm tra server backend.");
+      } else {
+        setSaveError(`Lưu cấu hình AI thất bại: ${msg}`);
+      }
+      setTimeout(() => setSaveError(null), 6000);
     } finally {
       setSavingAI(false);
     }
@@ -500,6 +508,12 @@ export default function SettingsPage() {
                 <span className="text-xs font-mono text-emerald-400 flex items-center gap-1 animate-fade-in">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   <span>Đã lưu thành công!</span>
+                </span>
+              )}
+              {saveError && (
+                <span className="text-xs font-mono text-rose-400 flex items-center gap-1 animate-fade-in max-w-sm text-right">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{saveError}</span>
                 </span>
               )}
               <button

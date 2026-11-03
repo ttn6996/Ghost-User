@@ -728,7 +728,7 @@ export default function ProjectDetailPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-zinc-300 pt-2 border-t border-emerald-900/40 text-[11px]">
                   <div>
                     <span className="text-zinc-500">Framework:</span>{" "}
-                    <span className="text-zinc-200 font-semibold">{auditResult.frameworks.join(", ") || "Generic Web"}</span>
+                    <span className="text-zinc-200 font-semibold">{(auditResult.frameworks || []).join(", ") || "Generic Web"}</span>
                   </div>
                   <div>
                     <span className="text-zinc-500">Pages Audited:</span>{" "}
@@ -815,7 +815,7 @@ export default function ProjectDetailPage() {
                   </div>
                 )}
 
-                {auditResult.test_runs.length > 0 && (
+                {((auditResult.test_runs?.length || 0) > 0) && (
                   <div className="pt-2 border-t border-emerald-900/40 space-y-1.5">
                     <div className="text-[11px] text-zinc-400 font-semibold">Kịch bản đã tự động sinh & chạy:</div>
                     {auditResult.test_runs.map((r) => (
@@ -1165,7 +1165,7 @@ export default function ProjectDetailPage() {
                               {st.name}
                             </span>
                             <span className="shrink-0 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/60">
-                              {st.steps.length} actions
+                              {(st.steps?.length || 0)} actions
                             </span>
                           </div>
                           {st.description && (
@@ -1177,7 +1177,7 @@ export default function ProjectDetailPage() {
                           <div className="pt-2">
                             <div className="text-[11px] font-mono text-zinc-500 mb-1">Chuỗi hành động mô phỏng:</div>
                             <div className="flex flex-wrap gap-1 font-mono text-[10px]">
-                              {st.steps.slice(0, 5).map((step, sIdx) => (
+                              {(st.steps || []).slice(0, 5).map((step, sIdx) => (
                                 <span
                                   key={sIdx}
                                   className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700/50"
@@ -1185,9 +1185,9 @@ export default function ProjectDetailPage() {
                                   {step.action} {step.url || step.selector?.split(",")[0] || ""}
                                 </span>
                               ))}
-                              {st.steps.length > 5 && (
+                              {((st.steps?.length || 0) > 5) && (
                                 <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                                  +{st.steps.length - 5} nữa
+                                  +{(st.steps?.length || 0) - 5} nữa
                                 </span>
                               )}
                             </div>
