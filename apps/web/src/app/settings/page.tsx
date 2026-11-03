@@ -234,16 +234,16 @@ export default function SettingsPage() {
       </div>
 
       {/* AI Model & Multi-Provider Configuration Card */}
-      <div className="rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/20 via-[#0f0f12] to-[#0f0f12] p-6 space-y-6 shadow-md">
+      <div className="rounded-xl border border-zinc-800 bg-[#121316] p-6 space-y-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-sm">
+            <div className="h-10 w-10 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-200 shadow-sm">
               <Bot className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold text-zinc-100">AI Intelligence & Multi-Model Engine</h2>
-                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[10px] border border-purple-500/30">
+                <span className="px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 font-mono text-[10px] border border-zinc-700/60">
                   Universal AI
                 </span>
               </div>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
               type="checkbox"
               checked={aiEnabled}
               onChange={(e) => setAiEnabled(e.target.checked)}
-              className="rounded border-zinc-700 bg-zinc-900 text-purple-600 focus:ring-0"
+              className="rounded border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-0"
             />
             <span>Kích hoạt AI Engine</span>
           </label>
@@ -274,7 +274,7 @@ export default function SettingsPage() {
               <select
                 value={aiProvider}
                 onChange={(e) => handleProviderChange(e.target.value)}
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               >
                 {Object.entries(PROVIDER_PRESETS).map(([key, item]) => (
                   <option key={key} value={key}>
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                   value={aiBaseUrl}
                   onChange={(e) => setAiBaseUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 />
               </div>
               <p className="mt-1 text-[11px] text-zinc-500">
@@ -312,7 +312,7 @@ export default function SettingsPage() {
             <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
               <label className="text-xs font-mono text-zinc-300 flex items-center gap-1.5">
                 <span>API Key Pool (Danh sách khóa xoay tua tự động)</span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 font-sans border border-purple-500/30">
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-300 font-mono border border-zinc-700/60">
                   Auto-Rotate 429
                 </span>
               </label>
@@ -325,13 +325,13 @@ export default function SettingsPage() {
 
             {/* Saved Keys Pool Badges */}
             {savedKeysPool.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2 p-2 rounded-lg bg-zinc-950/60 border border-zinc-800/80">
+              <div className="flex flex-wrap gap-2 mb-2 p-2 rounded-lg bg-[#0e0f12] border border-zinc-800/80">
                 {savedKeysPool.map((k, idx) => (
                   <span
                     key={idx}
                     className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-[11px] font-mono text-zinc-300"
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${idx === 0 ? "bg-emerald-400" : "bg-purple-400"}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${idx === 0 ? "bg-emerald-500" : "bg-zinc-500"}`} />
                     <span className="text-zinc-500 font-semibold">{idx === 0 ? "Primary" : `Backup #${idx}`}:</span>
                     <span>{k}</span>
                   </span>
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                     ? "Nhập các key mới (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy) để thay thế hoặc mở rộng pool..."
                     : "Dán một hoặc nhiều API Key vào đây (mỗi key trên 1 dòng hoặc cách nhau dấu phẩy)...\ne.g.\nsk-proj-primaryKey123...\nsk-proj-backupKey456..."
                 }
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 pr-10 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 pr-10 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               />
               <button
                 type="button"
@@ -376,7 +376,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleLoadModels}
                   disabled={loadingModels}
-                  className="inline-flex items-center gap-1 text-[11px] font-mono text-purple-400 hover:text-purple-300 hover:underline disabled:opacity-50"
+                  className="inline-flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-zinc-200 hover:underline disabled:opacity-50"
                 >
                   <RefreshCw className={`h-3 w-3 ${loadingModels ? "animate-spin" : ""}`} />
                   <span>{loadingModels ? "Đang tải models..." : "Load Models từ API"}</span>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
                 <select
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 >
                   {availableModels.map((m) => (
                     <option key={m} value={m}>
@@ -401,7 +401,7 @@ export default function SettingsPage() {
                   value={aiModel}
                   onChange={(e) => setAiModel(e.target.value)}
                   placeholder="e.g. gemini-1.5-flash or gpt-4o-mini"
-                  className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
                 />
               )}
               {loadModelsMsg && (
@@ -420,7 +420,7 @@ export default function SettingsPage() {
                 value={aiModel}
                 onChange={(e) => setAiModel(e.target.value)}
                 placeholder="Gõ tên model bất kỳ nếu không có trong list"
-                className="w-full rounded-lg border border-zinc-800 bg-[#0a0a0c] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-purple-500 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-800 bg-[#0e0f12] px-3 py-2 text-xs text-zinc-200 font-mono focus:border-zinc-500 focus:outline-none"
               />
               <p className="mt-1 text-[11px] text-zinc-500">
                 Hỗ trợ bất kỳ custom model tag nào (e.g. <code className="text-zinc-400">qwen2.5-coder:14b</code>).
@@ -430,37 +430,29 @@ export default function SettingsPage() {
 
           {/* Test Result Display */}
           {aiTestResult && (
-            <div
-              className={`p-3 rounded-lg border text-xs font-mono space-y-2 ${
-                aiTestResult.success
-                  ? "border-emerald-900/60 bg-emerald-950/20 text-emerald-300"
-                  : "border-rose-900/60 bg-rose-950/20 text-rose-300"
-              }`}
-            >
+            <div className="p-4 rounded-lg border border-zinc-800 bg-[#0e0f12] text-xs font-sans space-y-2.5">
               <div className="flex items-start gap-2.5">
-                {aiTestResult.success ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-                )}
+                <div className={`mt-0.5 p-1 rounded-full ${aiTestResult.success ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
+                  {aiTestResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                </div>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">
+                    <span className="font-medium text-zinc-200">
                       {aiTestResult.success
-                        ? `Kết nối AI thành công! (${aiTestResult.keys_healthy ?? 1}/${aiTestResult.keys_tested ?? 1} keys sẵn sàng)`
+                        ? `Kết nối AI thành công (${aiTestResult.keys_healthy ?? 1}/${aiTestResult.keys_tested ?? 1} keys sẵn sàng)`
                         : "Kiểm tra kết nối thất bại"}
                     </span>
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-[11px] font-mono text-zinc-500">
                       Độ trễ trung bình: {aiTestResult.latency_ms}ms
                     </span>
                   </div>
                   {aiTestResult.reply && (
-                    <div className="text-[11px] text-emerald-400/90">
+                    <div className="text-[11px] text-zinc-400 font-mono">
                       Phản hồi từ {aiTestResult.model}: &quot;{aiTestResult.reply}&quot;
                     </div>
                   )}
                   {aiTestResult.error && (
-                    <div className="text-[11px] text-rose-300 whitespace-pre-wrap">
+                    <div className="text-[11px] text-rose-400/90 whitespace-pre-wrap font-mono">
                       Chi tiết lỗi: {aiTestResult.error}
                     </div>
                   )}
@@ -469,16 +461,16 @@ export default function SettingsPage() {
 
               {/* Individual Key Diagnostic Breakdown */}
               {aiTestResult.key_details && aiTestResult.key_details.length > 1 && (
-                <div className="pt-2 border-t border-zinc-800/60 space-y-1 pl-6">
-                  <div className="text-[11px] font-semibold text-zinc-400 mb-1">Chẩn đoán từng API Key:</div>
+                <div className="pt-2 border-t border-zinc-800/80 space-y-1.5 pl-7 font-mono text-[11px]">
+                  <div className="text-zinc-500 font-sans text-[11px]">Chẩn đoán từng API Key:</div>
                   {aiTestResult.key_details.map((kd) => (
-                    <div key={kd.index} className="flex items-center justify-between text-[11px] py-0.5">
-                      <span className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${kd.success ? "bg-emerald-400" : "bg-rose-400"}`} />
-                        <span className="text-zinc-400">Key #{kd.index} ({kd.key_masked}):</span>
+                    <div key={kd.index} className="flex items-center justify-between py-0.5">
+                      <span className="flex items-center gap-2">
+                        <span className={`h-1.5 w-1.5 rounded-full ${kd.success ? "bg-emerald-500" : "bg-rose-500"}`} />
+                        <span className="text-zinc-300">Key #{kd.index} ({kd.key_masked}):</span>
                       </span>
-                      <span className={kd.success ? "text-emerald-400" : "text-rose-400"}>
-                        {kd.success ? `Hoạt động (${kd.latency_ms}ms)` : `Lỗi: ${kd.error || "429 / Quota"}`}
+                      <span className={kd.success ? "text-zinc-400" : "text-rose-400"}>
+                        {kd.success ? `${kd.latency_ms}ms · Sẵn sàng` : `Lỗi: ${kd.error || "429 / Quota"}`}
                       </span>
                     </div>
                   ))}
@@ -493,12 +485,12 @@ export default function SettingsPage() {
               type="button"
               onClick={handleTestAIConnection}
               disabled={testingAI}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-purple-500/40 bg-purple-950/30 hover:bg-purple-900/40 text-xs font-mono font-medium text-purple-300 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-zinc-700 bg-zinc-800/90 hover:bg-zinc-700 text-xs font-mono font-medium text-zinc-200 transition active:scale-[0.98] disabled:opacity-50"
             >
               {testingAI ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
               )}
               <span>{testingAI ? "Đang gửi ping test..." : "Test Connection (Kiểm tra Key & Model)"}</span>
             </button>
@@ -514,7 +506,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleSaveAISettings}
                 disabled={savingAI}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition disabled:opacity-50 shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-100 hover:bg-white text-xs font-medium text-zinc-950 transition active:scale-[0.98] shadow-sm disabled:opacity-50"
               >
                 {savingAI ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                 <span>{savingAI ? "Đang lưu..." : "Lưu Cấu Hình AI"}</span>

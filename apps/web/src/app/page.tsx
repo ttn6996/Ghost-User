@@ -75,7 +75,7 @@ export default function OverviewPage() {
           </button>
           <Link
             href="/projects"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-xs font-medium text-zinc-950 transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>New Project</span>
@@ -124,12 +124,12 @@ export default function OverviewPage() {
         <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-purple-400" />
+              <PlayCircle className="h-4 w-4 text-zinc-300" />
               <span>Recent Test Runs</span>
             </h2>
             <Link
               href="/runs"
-              className="text-xs text-purple-400 hover:text-purple-300 font-mono flex items-center gap-1"
+              className="text-xs text-zinc-300 hover:text-purple-300 font-mono flex items-center gap-1"
             >
               <span>View all</span>
               <ArrowRight className="h-3 w-3" />
@@ -151,7 +151,7 @@ export default function OverviewPage() {
                   {stats.recent_runs.map((r) => (
                     <tr key={r.id} className="hover:bg-zinc-800/20">
                       <td className="py-2.5 font-semibold text-zinc-200">
-                        <Link href={`/runs/${r.id}`} className="hover:text-purple-400">
+                        <Link href={`/runs/${r.id}`} className="hover:text-zinc-300">
                           {r.id.slice(0, 8)}...
                         </Link>
                       </td>

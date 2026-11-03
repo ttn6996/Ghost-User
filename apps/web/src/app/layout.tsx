@@ -36,7 +36,7 @@ export default function RootLayout({
         {/* Sidebar */}
         <aside className="w-64 border-r border-zinc-800 bg-[#0e0e11] flex flex-col shrink-0">
           <div className="h-16 flex items-center px-6 border-b border-zinc-800 gap-3">
-            <div className="h-8 w-8 rounded-lg bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shadow-sm">
+            <div className="h-8 w-8 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-200 shadow-sm">
               <Bot className="h-5 w-5" />
             </div>
             <div>
@@ -85,7 +85,7 @@ export default function RootLayout({
             <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
               <span className="text-zinc-300">WORKSPACE</span>
               <span>/</span>
-              <span className="text-purple-400 font-semibold">default-env</span>
+              <span className="text-zinc-200 font-semibold">default-env</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-zinc-800 border border-zinc-700 text-zinc-300">

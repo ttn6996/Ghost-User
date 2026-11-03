@@ -339,7 +339,7 @@ export default function ProjectDetailPage() {
         <div className="text-rose-400 font-mono text-sm">{error || "Project not found"}</div>
         <Link
           href="/projects"
-          className="inline-flex items-center gap-1.5 text-xs font-mono text-purple-400 hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-300 hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Back to Projects</span>
@@ -376,7 +376,7 @@ export default function ProjectDetailPage() {
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-mono">
-              <div className="flex items-center gap-1.5 text-purple-400">
+              <div className="flex items-center gap-1.5 text-zinc-300">
                 <Globe className="h-4 w-4" />
                 <a
                   href={project.base_url}
@@ -405,12 +405,12 @@ export default function ProjectDetailPage() {
                 handleRunAutonomousAudit();
               }}
               disabled={auditing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-md transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-100 hover:bg-white text-xs font-medium text-zinc-950 transition active:scale-[0.98] shadow-sm disabled:opacity-50"
             >
               {auditing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4 text-purple-200" />
+                <Sparkles className="h-4 w-4 text-zinc-700" />
               )}
               <span>{auditing ? "Đang Audit..." : "Chạy Autonomous UI Audit"}</span>
             </button>
@@ -422,7 +422,7 @@ export default function ProjectDetailPage() {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700/60 transition-colors shadow-sm"
               title="Xuất báo cáo HTML / PDF hoàn chỉnh"
             >
-              <FileDown className="h-4 w-4 text-purple-400" />
+              <FileDown className="h-4 w-4 text-zinc-300" />
               <span>Export Report</span>
             </a>
 
@@ -513,7 +513,7 @@ export default function ProjectDetailPage() {
           <Compass className="h-4 w-4" />
           <span>Auto-Discovery & Crawler</span>
           {discoveryReport && (
-            <span className="px-1.5 py-0.2 rounded-full bg-purple-500/30 text-[10px] text-purple-200">
+            <span className="px-1.5 py-0.2 rounded-full bg-purple-500/30 text-[10px] text-zinc-700">
               {discoveryReport.pages_count} trang
             </span>
           )}
@@ -525,7 +525,7 @@ export default function ProjectDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-purple-400" />
+              <PlayCircle className="h-4 w-4 text-zinc-300" />
               <span>Project Test Cases ({testCases.length})</span>
             </h2>
           </div>
@@ -607,15 +607,15 @@ export default function ProjectDetailPage() {
       {activeTab === "source" && (
         <div className="space-y-6">
           {/* Autonomous Audit Hero Banner */}
-          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-950/30 via-[#0f0f12] to-indigo-950/20 p-6 space-y-4 shadow-sm">
+          <div className="rounded-xl border border-zinc-800 bg-[#121316] p-6 space-y-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  <Sparkles className="h-5 w-5 text-zinc-300" />
                   <h3 className="text-base font-semibold text-zinc-100">
                     Autonomous UI & Source Code Audit
                   </h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 font-mono border border-zinc-700/60">
                     Mode B Autonomous
                   </span>
                 </div>
@@ -628,20 +628,20 @@ export default function ProjectDetailPage() {
                 type="button"
                 onClick={handleRunAutonomousAudit}
                 disabled={auditing}
-                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50 shadow-md shrink-0"
+                className="px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-medium flex items-center gap-2 transition active:scale-[0.98] disabled:opacity-50 shadow-sm shrink-0"
               >
                 {auditing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4 text-purple-200" />
+                  <Sparkles className="h-4 w-4 text-zinc-700" />
                 )}
                 <span>{auditing ? "Đang chạy Autonomous Audit..." : "Bắt đầu Audit Toàn Diện"}</span>
               </button>
             </div>
 
             {auditing && (
-              <div className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-4 text-xs font-mono text-purple-200 flex items-center gap-3 animate-pulse">
-                <Loader2 className="h-5 w-5 animate-spin text-purple-400 shrink-0" />
+              <div className="rounded-lg border border-purple-500/40 bg-purple-950/40 p-4 text-xs font-mono text-zinc-700 flex items-center gap-3 animate-pulse">
+                <Loader2 className="h-5 w-5 animate-spin text-zinc-300 shrink-0" />
                 <div>
                   <div className="font-semibold">Đang thực thi quy trình Autonomous UI Audit...</div>
                   <div className="text-[11px] text-purple-300/80 mt-0.5">
@@ -689,8 +689,8 @@ export default function ProjectDetailPage() {
                   <div className="p-3 rounded-lg border border-purple-500/30 bg-purple-950/20 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-purple-400" />
-                        <span className="font-semibold text-purple-200">Multimodal Visual QA Score:</span>
+                        <Sparkles className="h-4 w-4 text-zinc-300" />
+                        <span className="font-semibold text-zinc-700">Multimodal Visual QA Score:</span>
                         <span className="font-bold text-emerald-400 text-sm">
                           {auditResult.visual_qa_report.visual_score_out_of_100}/100
                         </span>
@@ -729,7 +729,7 @@ export default function ProjectDetailPage() {
                           }`}>
                             {r.status}
                           </span>
-                          <Link href={`/runs/${r.id}`} className="text-purple-400 hover:underline flex items-center gap-0.5">
+                          <Link href={`/runs/${r.id}`} className="text-zinc-300 hover:underline flex items-center gap-0.5">
                             <span>Chi tiết</span>
                             <ArrowRight className="h-3 w-3" />
                           </Link>
@@ -844,7 +844,7 @@ export default function ProjectDetailPage() {
             <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                  <Server className="h-4 w-4 text-purple-400" />
+                  <Server className="h-4 w-4 text-zinc-300" />
                   <span>Mode B: Dev Server Manager</span>
                 </h3>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[10px] ${
@@ -923,7 +923,7 @@ export default function ProjectDetailPage() {
               {/* Dev Server Log Terminal */}
               <div className="rounded-lg border border-zinc-800 bg-[#0a0a0c] overflow-hidden">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-mono text-zinc-400">
-                  <Terminal className="h-3 w-3 text-purple-400" />
+                  <Terminal className="h-3 w-3 text-zinc-300" />
                   <span>Dev Server Output Terminal</span>
                 </div>
                 <div className="p-2.5 font-mono text-[11px] text-zinc-400 max-h-32 overflow-y-auto whitespace-pre-wrap">
@@ -939,13 +939,13 @@ export default function ProjectDetailPage() {
       {activeTab === "discovery" && (
         <div className="space-y-6">
           {/* Action & Trigger Card */}
-          <div className="rounded-xl border border-purple-500/30 bg-gradient-to-b from-purple-950/20 via-[#0f0f12] to-[#0f0f12] p-5 space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-[#121316] p-5 space-y-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <h3 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                  <Compass className="h-5 w-5 text-purple-400" />
+                  <Compass className="h-5 w-5 text-zinc-300" />
                   <span>Autonomous Web Crawler & Discovery</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-300 font-mono border border-zinc-700/60">
                     Tự động hoá
                   </span>
                 </h3>
@@ -958,7 +958,7 @@ export default function ProjectDetailPage() {
                 type="button"
                 disabled={crawling}
                 onClick={handleStartDiscovery}
-                className="px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-2 transition disabled:opacity-50 shadow-md shrink-0"
+                className="px-4 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-medium flex items-center gap-2 transition active:scale-[0.98] disabled:opacity-50 shadow-sm shrink-0"
               >
                 <RefreshCw className={`h-4 w-4 ${crawling ? "animate-spin" : ""}`} />
                 <span>{crawling ? "Đang quét toàn trang..." : "Bắt đầu khám phá (Start Crawl)"}</span>
@@ -980,8 +980,8 @@ export default function ProjectDetailPage() {
             )}
 
             {crawling && (
-              <div className="rounded-lg border border-purple-500/40 bg-purple-950/30 p-4 text-xs font-mono text-purple-200 flex items-center gap-3 animate-pulse">
-                <RefreshCw className="h-5 w-5 animate-spin text-purple-400 shrink-0" />
+              <div className="rounded-lg border border-purple-500/40 bg-purple-950/30 p-4 text-xs font-mono text-zinc-700 flex items-center gap-3 animate-pulse">
+                <RefreshCw className="h-5 w-5 animate-spin text-zinc-300 shrink-0" />
                 <div>
                   <div className="font-semibold">Đang khám phá website bằng Playwright...</div>
                   <div className="text-[11px] text-purple-300/80 mt-0.5">
@@ -998,7 +998,7 @@ export default function ProjectDetailPage() {
               {/* Stat Cards */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-zinc-800 bg-[#0f0f12] p-4 flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                  <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-zinc-300">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
@@ -1046,7 +1046,7 @@ export default function ProjectDetailPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-purple-400" />
+                        <Sparkles className="h-4 w-4 text-zinc-300" />
                         <span>Kịch bản kiểm thử tự động sinh (AI / Smart Discovery)</span>
                       </h4>
                       <p className="text-xs text-zinc-400 mt-0.5">
@@ -1241,7 +1241,7 @@ export default function ProjectDetailPage() {
 
           <div className="space-y-2 p-3.5 rounded-lg border border-zinc-800 bg-[#0a0a0c]">
             <div className="text-xs font-semibold text-zinc-200 font-mono flex items-center gap-1.5">
-              <Lock className="h-4 w-4 text-purple-400" />
+              <Lock className="h-4 w-4 text-zinc-300" />
               <span>HTTP Authorization Token (Bearer Token Injection)</span>
             </div>
             <div>
