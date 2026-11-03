@@ -12,7 +12,7 @@ import re
 import json
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 # Directories ignored during recursive traversal
@@ -69,6 +69,16 @@ class SourceScanResult(BaseModel):
     forms: List[DiscoveredForm] = Field(default_factory=list)
     suggested_dev_command: Optional[str] = None
     default_port: Optional[int] = None
+
+    @computed_field
+    @property
+    def detected_frameworks(self) -> List[str]:
+        return [f.name for f in self.frameworks]
+
+    @computed_field
+    @property
+    def start_command(self) -> Optional[str]:
+        return self.suggested_dev_command
 
 
 class SourceCodeParser:

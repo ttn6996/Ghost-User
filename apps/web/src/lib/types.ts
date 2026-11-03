@@ -197,13 +197,25 @@ export interface DiscoveredRoute {
   type: string;
 }
 
+export interface DiscoveredFramework {
+  name: string;
+  category: string;
+  confidence: number;
+  indicators?: string[];
+}
+
 export interface SourceScanResult {
-  project_id: string;
-  source_path: string;
-  detected_frameworks: string[];
+  local_path?: string;
+  project_id?: string;
+  source_path?: string;
+  total_files_scanned?: number;
+  frameworks?: DiscoveredFramework[];
+  detected_frameworks?: string[];
   routes: DiscoveredRoute[];
   forms: DiscoveredForm[];
+  suggested_dev_command?: string;
   start_command?: string;
+  default_port?: number;
   package_manager?: string;
 }
 

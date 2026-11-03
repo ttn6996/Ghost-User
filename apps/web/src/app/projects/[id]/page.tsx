@@ -802,7 +802,7 @@ export default function ProjectDetailPage() {
 
                 {scanResult && (
                   <span className="text-[11px] font-mono text-zinc-400">
-                    Phát hiện: <strong className="text-zinc-200">{scanResult.routes.length}</strong> routes, <strong className="text-zinc-200">{scanResult.forms.length}</strong> forms
+                    Phát hiện: <strong className="text-zinc-200">{scanResult.routes?.length || 0}</strong> routes, <strong className="text-zinc-200">{scanResult.forms?.length || 0}</strong> forms
                   </span>
                 )}
               </div>
@@ -812,14 +812,14 @@ export default function ProjectDetailPage() {
                 <div className="space-y-3 pt-3 border-t border-zinc-800">
                   <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
                     <span className="text-zinc-400">Frameworks:</span>
-                    {scanResult.detected_frameworks.map((fw) => (
-                      <span key={fw} className="px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/60 text-[10px]">
+                    {((scanResult.detected_frameworks?.length ? scanResult.detected_frameworks : scanResult.frameworks?.map(f => typeof f === 'string' ? f : f.name)) || []).map((fw) => (
+                      <span key={fw} className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px]">
                         {fw}
                       </span>
                     ))}
-                    {scanResult.start_command && (
+                    {(scanResult.start_command || scanResult.suggested_dev_command) && (
                       <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px]">
-                        Cmd: {scanResult.start_command}
+                        Cmd: {scanResult.start_command || scanResult.suggested_dev_command}
                       </span>
                     )}
                   </div>
@@ -828,10 +828,10 @@ export default function ProjectDetailPage() {
                   <div className="space-y-1.5">
                     <div className="text-[11px] font-mono text-zinc-400 font-semibold">Routes đã phát hiện:</div>
                     <div className="max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]">
-                      {scanResult.routes.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[#0a0a0c] border border-zinc-800/80">
+                      {(scanResult.routes || []).map((r, i) => (
+                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-[#0e0f12] border border-zinc-800/80">
                           <span className="text-zinc-200">{r.path}</span>
-                          <span className="text-[10px] text-zinc-500">{r.type}</span>
+                          <span className="text-[10px] text-zinc-500">{r.type || (r as any).route_type}</span>
                         </div>
                       ))}
                     </div>
